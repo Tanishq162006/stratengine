@@ -59,6 +59,7 @@ py-modules = [
     "manual_critic",
     "source_quality",
     "dedup",
+    "llm_client",
     "prompt_logger",
     "prompt_analyzer",
     "family_performance",

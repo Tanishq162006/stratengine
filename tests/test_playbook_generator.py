@@ -1,10 +1,10 @@
-"""playbook_generator — mocked LLM."""
+"""playbook_generator — llm_client.complete mocked."""
 from __future__ import annotations
 
 import json
-from unittest.mock import patch
 
 from schema import AssetClass, Timeframe, TradingContext
+
 
 _GOOD = {
     "playbooks": [
@@ -43,28 +43,6 @@ _GOOD = {
 }
 
 
-class _Block:
-    def __init__(self, text):
-        self.type = "text"
-        self.text = text
-
-
-class _Resp:
-    def __init__(self, text):
-        self.content = [_Block(text)]
-
-
-def _mk_client(payload):
-    class _C:
-        def __init__(self, *a, **kw):
-            self.messages = self
-
-        def create(self, **kwargs):
-            return _Resp(json.dumps(payload))
-
-    return _C
-
-
 def _ctx() -> TradingContext:
     return TradingContext(
         asset_classes=[AssetClass.EQUITY],
@@ -73,12 +51,12 @@ def _ctx() -> TradingContext:
     )
 
 
-def test_generate_playbooks_returns_valid(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
-    with patch("playbook_generator.Anthropic", _mk_client(_GOOD)):
-        from playbook_generator import generate_playbooks
+def test_generate_playbooks_returns_valid(monkeypatch, tmp_path):
+    monkeypatch.setenv("STRATENGINE_DB_PATH", str(tmp_path / "t.db"))
+    monkeypatch.setattr("llm_client.complete", lambda **kw: json.dumps(_GOOD))
+    from playbook_generator import generate_playbooks
 
-        out = generate_playbooks(_ctx(), cards=[])
+    out = generate_playbooks(_ctx(), cards=[])
     assert len(out["playbooks"]) == 3
     assert out["warnings"] == []
     pb = out["playbooks"][0]
@@ -93,17 +71,17 @@ def test_generate_playbooks_returns_valid(monkeypatch):
         assert field in pb
 
 
-def test_generate_playbooks_filters_invalid(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+def test_generate_playbooks_filters_invalid(monkeypatch, tmp_path):
+    monkeypatch.setenv("STRATENGINE_DB_PATH", str(tmp_path / "t.db"))
     bad = {
         "playbooks": [
-            {"name": "partial", "entry_checklist": ["x"]},  # missing required fields
+            {"name": "partial", "entry_checklist": ["x"]},
             _GOOD["playbooks"][0],
         ]
     }
-    with patch("playbook_generator.Anthropic", _mk_client(bad)):
-        from playbook_generator import generate_playbooks
+    monkeypatch.setattr("llm_client.complete", lambda **kw: json.dumps(bad))
+    from playbook_generator import generate_playbooks
 
-        out = generate_playbooks(_ctx(), cards=[])
+    out = generate_playbooks(_ctx(), cards=[])
     assert len(out["playbooks"]) == 1
     assert any("missing" in w for w in out["warnings"])

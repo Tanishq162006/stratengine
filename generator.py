@@ -5,11 +5,11 @@ import json
 import re
 from pathlib import Path
 
-from anthropic import Anthropic
 from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import RoundContext, StrategyCard
+import llm_client
 import prompt_logger
 
 console = Console()
@@ -28,13 +28,6 @@ def _render(tpl: str, **vars: str) -> str:
     return out
 
 
-def _client() -> Anthropic:
-    s = load_settings()
-    if not s.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set.")
-    return Anthropic(api_key=s.anthropic_api_key)
-
-
 def _extract_json(text: str) -> dict:
     m = _JSON_RE.search(text)
     if not m:
@@ -43,11 +36,7 @@ def _extract_json(text: str) -> dict:
 
 
 def _call(model: str, prompt: str, max_tokens: int = 4096) -> str:
-    client = _client()
-    resp = client.messages.create(
-        model=model, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}]
-    )
-    return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+    return llm_client.complete(model=model, prompt=prompt, max_tokens=max_tokens)
 
 
 def synthesize(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:

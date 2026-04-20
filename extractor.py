@@ -7,11 +7,11 @@ import json
 import re
 from pathlib import Path
 
-from anthropic import Anthropic
 from rich.console import Console
 
 from config import CARDS_DIR, CLEAN_DIR, PROMPTS_DIR, ensure_dirs, load_settings
 from schema import StrategyCard
+import llm_client
 import prompt_logger
 import source_quality
 
@@ -45,9 +45,6 @@ def _extract_json(text: str) -> dict:
 
 def extract_card(article_text: str, source_name: str, url: str) -> StrategyCard | None:
     settings = load_settings()
-    if not settings.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set.")
-    client = Anthropic(api_key=settings.anthropic_api_key)
     prompt = _render(
         _load_prompt(),
         source_name=source_name,
@@ -58,12 +55,7 @@ def extract_card(article_text: str, source_name: str, url: str) -> StrategyCard 
         "extract.txt", context={"url": url, "source": source_name}, input_obj={"len": len(article_text)}
     )
     try:
-        resp = client.messages.create(
-            model=settings.extract_model,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        text = llm_client.complete(model=settings.extract_model, prompt=prompt, max_tokens=4096)
         data = _extract_json(text)
     except Exception as e:
         prompt_logger.finalize(log_id, "failure", notes=str(e))

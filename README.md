@@ -32,7 +32,9 @@ sources/seeds.json
 pip install -r requirements.txt
 
 cp .env.example .env
-# Edit .env and add ANTHROPIC_API_KEY
+# Either (a) add an ANTHROPIC_API_KEY, or
+# (b) leave it blank and run `claude login` once — StratEngine will route LLM
+#     calls through the Claude Code CLI using your claude.ai subscription auth.
 
 # Fetch + clean seed articles
 python run.py crawl

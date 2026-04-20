@@ -4,11 +4,11 @@ from __future__ import annotations
 import json
 import re
 
-from anthropic import Anthropic
 from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import TradingContext
+import llm_client
 import prompt_logger
 
 console = Console()
@@ -26,9 +26,6 @@ def _render(tpl: str, **vars: str) -> str:
 def critique_playbooks(ctx: TradingContext, playbooks: list[dict]) -> dict:
     """Return {'reviews': [{name, issues, verdict, revision_notes}, ...]}."""
     s = load_settings()
-    if not s.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set.")
-    client = Anthropic(api_key=s.anthropic_api_key)
     tpl = (PROMPTS_DIR / "manual_critic.txt").read_text(encoding="utf-8")
     prompt = _render(
         tpl,
@@ -41,12 +38,7 @@ def critique_playbooks(ctx: TradingContext, playbooks: list[dict]) -> dict:
         input_obj={"n_playbooks": len(playbooks)},
     )
     try:
-        resp = client.messages.create(
-            model=s.critic_model,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        text = llm_client.complete(model=s.critic_model, prompt=prompt, max_tokens=4096)
         m = _JSON_RE.search(text)
         if not m:
             raise ValueError("No JSON in manual_critic output.")

@@ -1,7 +1,5 @@
-"""Extractor tests. The LLM call is monkeypatched — no real API calls."""
+"""Extractor tests. llm_client is monkeypatched — no real LLM calls."""
 from __future__ import annotations
-
-from unittest.mock import patch
 
 
 _FAKE_JSON = """{
@@ -28,51 +26,25 @@ _FAKE_JSON = """{
 }"""
 
 
-class _FakeBlock:
-    def __init__(self, text):
-        self.type = "text"
-        self.text = text
+def test_extract_card_parses_json_into_model(monkeypatch, tmp_path):
+    monkeypatch.setenv("STRATENGINE_DB_PATH", str(tmp_path / "t.db"))
+    monkeypatch.setattr("llm_client.complete", lambda **kw: _FAKE_JSON)
+    from extractor import extract_card
 
-
-class _FakeResp:
-    def __init__(self, text):
-        self.content = [_FakeBlock(text)]
-
-
-class _FakeMessages:
-    def create(self, **kwargs):
-        return _FakeResp(_FAKE_JSON)
-
-
-class _FakeClient:
-    def __init__(self, *a, **kw):
-        self.messages = _FakeMessages()
-
-
-def test_extract_card_parses_json_into_model(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
-    with patch("extractor.Anthropic", _FakeClient):
-        from extractor import extract_card
-
-        card = extract_card("some article body", "TestSource", "https://example.com/a")
+    card = extract_card("some article body", "TestSource", "https://example.com/a")
     assert card is not None
     assert card.title == "RSI2 Mean Reversion"
     assert card.confidence == 0.7
     assert card.indicators_used[0].name == "RSI"
 
 
-def test_extract_card_handles_skip(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+def test_extract_card_handles_skip(monkeypatch, tmp_path):
+    monkeypatch.setenv("STRATENGINE_DB_PATH", str(tmp_path / "t.db"))
+    monkeypatch.setattr(
+        "llm_client.complete",
+        lambda **kw: '{"skip": true, "reason": "not a strategy"}',
+    )
+    from extractor import extract_card
 
-    class _SkipMessages:
-        def create(self, **kwargs):
-            return _FakeResp('{"skip": true, "reason": "not a strategy"}')
-
-    class _SkipClient:
-        def __init__(self, *a, **kw):
-            self.messages = _SkipMessages()
-
-    with patch("extractor.Anthropic", _SkipClient):
-        from extractor import extract_card
-        card = extract_card("an overview article", "TestSource", "https://example.com/b")
+    card = extract_card("an overview article", "TestSource", "https://example.com/b")
     assert card is None

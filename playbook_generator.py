@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 import re
 
-from anthropic import Anthropic
 from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import StrategyCard, TradingContext
+import llm_client
 import prompt_logger
 
 console = Console()
@@ -49,9 +49,6 @@ def _validate_playbook(pb: dict) -> list[str]:
 def generate_playbooks(ctx: TradingContext, cards: list[StrategyCard]) -> dict:
     """Return {playbooks: [...], warnings: [...]}."""
     s = load_settings()
-    if not s.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set.")
-    client = Anthropic(api_key=s.anthropic_api_key)
     tpl = (PROMPTS_DIR / "playbook.txt").read_text(encoding="utf-8")
     prompt = _render(
         tpl,
@@ -64,12 +61,7 @@ def generate_playbooks(ctx: TradingContext, cards: list[StrategyCard]) -> dict:
         input_obj={"n_cards": len(cards)},
     )
     try:
-        resp = client.messages.create(
-            model=s.synth_model,
-            max_tokens=6000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        text = llm_client.complete(model=s.synth_model, prompt=prompt, max_tokens=6000)
         data = _extract_json(text)
     except Exception as e:
         prompt_logger.finalize(log_id, "failure", notes=str(e))

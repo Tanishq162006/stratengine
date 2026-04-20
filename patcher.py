@@ -11,11 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from anthropic import Anthropic
 from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import RoundContext
+import llm_client
 import prompt_logger
 
 console = Console()
@@ -91,9 +91,6 @@ def patch(
     how re-evaluation happens (subprocess, mock, etc).
     """
     s = load_settings()
-    if not s.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set.")
-    client = Anthropic(api_key=s.anthropic_api_key)
     tpl = (PROMPTS_DIR / "patch.txt").read_text(encoding="utf-8")
 
     history: list[str] = [error]
@@ -117,14 +114,7 @@ def patch(
             input_obj={"category": category, "error_len": len(last_error)},
         )
         try:
-            resp = client.messages.create(
-                model=s.coder_model,
-                max_tokens=6000,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            text = "".join(
-                b.text for b in resp.content if getattr(b, "type", None) == "text"
-            )
+            text = llm_client.complete(model=s.coder_model, prompt=prompt, max_tokens=6000)
             current_code = _strip_fences(text)
         except Exception as e:
             prompt_logger.finalize(log_id, "failure", notes=str(e))
