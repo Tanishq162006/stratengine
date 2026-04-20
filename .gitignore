@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Envs
+.env
+.env.local
+.venv/
+venv/
+env/
+
+# Data + artifacts
+data/raw/*
+data/clean/*
+data/cards/*
+!data/**/.gitkeep
+memory/rounds/*
+memory/candidates/*
+memory/results/*
+memory/postmortems/*
+!memory/**/.gitkeep
+
+# DBs + indexes
+*.db
+*.sqlite
+*.sqlite3
+chroma/
+.chroma/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
