@@ -5,7 +5,9 @@
       "name": "QuantStart",
       "base_url": "https://www.quantstart.com",
       "sitemap_url": "https://www.quantstart.com/sitemap.xml",
-      "include_patterns": ["/articles/"],
+      "include_patterns": [
+        "/articles/"
+      ],
       "robots_url": "https://www.quantstart.com/robots.txt",
       "seed_urls": [
         "https://www.quantstart.com/articles/",
@@ -14,28 +16,24 @@
         "https://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing/",
         "https://www.quantstart.com/articles/Backtesting-A-Moving-Average-Crossover-in-Python-with-pandas/",
         "https://www.quantstart.com/articles/Backtesting-An-Intraday-Mean-Reversion-Pairs-Strategy-Between-SPY-And-IWM/",
-        "https://www.quantstart.com/articles/Cointegration-Augmented-Dickey-Fuller-Test-for-Pairs-Trading-Evaluation-in-R/",
-        "https://www.quantstart.com/articles/Introduction-to-Quantitative-Trading/",
         "https://www.quantstart.com/articles/Beginners-Guide-to-Quantitative-Trading/",
-        "https://www.quantstart.com/articles/Forecasting-Financial-Time-Series-Part-I/",
         "https://www.quantstart.com/articles/ARIMA-GARCH-Trading-Strategy-on-the-SP500-Stock-Market-Index-Using-R/",
         "https://www.quantstart.com/articles/Kalman-Filter-Based-Pairs-Trading-Strategy-In-QSTrader/",
         "https://www.quantstart.com/articles/Event-Driven-Backtesting-with-Python-Part-I/",
         "https://www.quantstart.com/articles/Event-Driven-Backtesting-with-Python-Part-II/",
         "https://www.quantstart.com/articles/Continuous-Futures-Contracts-for-Backtesting-Purposes/",
-        "https://www.quantstart.com/articles/Sharpe-Ratio-and-the-Information-Ratio/",
-        "https://www.quantstart.com/articles/Maximum-Drawdown-Calculation-in-Python/",
         "https://www.quantstart.com/articles/Monte-Carlo-Simulations-In-CUDA-Barrier-Option-Pricing/",
-        "https://www.quantstart.com/articles/Hidden-Markov-Models-for-Regime-Detection-using-R/",
-        "https://www.quantstart.com/articles/Using-Python-pandas-and-NumPy-to-Answer-Questions-About-Your-Data/",
-        "https://www.quantstart.com/articles/Volatility-Targeting-for-Asset-Allocation-Strategies/"
+        "https://www.quantstart.com/articles/Hidden-Markov-Models-for-Regime-Detection-using-R/"
       ]
     },
     {
       "name": "Backtrader",
       "base_url": "https://www.backtrader.com",
       "sitemap_url": null,
-      "include_patterns": ["/docu/", "/blog/"],
+      "include_patterns": [
+        "/docu/",
+        "/blog/"
+      ],
       "robots_url": "https://www.backtrader.com/robots.txt",
       "seed_urls": [
         "https://www.backtrader.com/docu/",
@@ -43,14 +41,10 @@
         "https://www.backtrader.com/docu/concepts/",
         "https://www.backtrader.com/docu/strategy/",
         "https://www.backtrader.com/docu/signal_strategy/signal_strategy/",
-        "https://www.backtrader.com/docu/order-creation-execution/",
         "https://www.backtrader.com/docu/order-creation-execution/bracket/bracket/",
         "https://www.backtrader.com/docu/order-creation-execution/oco/oco/",
         "https://www.backtrader.com/docu/sizers/sizers/",
         "https://www.backtrader.com/docu/analyzers/analyzers/",
-        "https://www.backtrader.com/docu/analyzers/sharperatio/",
-        "https://www.backtrader.com/docu/analyzers/drawdown/",
-        "https://www.backtrader.com/docu/analyzers/tradeanalyzer/",
         "https://www.backtrader.com/docu/observers-and-statistics/observers-and-statistics/",
         "https://www.backtrader.com/docu/indautoref/",
         "https://www.backtrader.com/docu/commission-schemes/commission-schemes/",
@@ -58,15 +52,18 @@
         "https://www.backtrader.com/docu/broker/",
         "https://www.backtrader.com/docu/cerebro/",
         "https://www.backtrader.com/docu/datafeed/",
-        "https://www.backtrader.com/docu/live/live/",
-        "https://www.backtrader.com/docu/extending-a-datafeed/extending-a-datafeed/"
+        "https://www.backtrader.com/docu/live/live/"
       ]
     },
     {
       "name": "QuantConnect Docs",
       "base_url": "https://www.quantconnect.com",
       "sitemap_url": null,
-      "include_patterns": ["/docs/v2/", "/learning/", "/research/"],
+      "include_patterns": [
+        "/docs/v2/",
+        "/learning/",
+        "/research/"
+      ],
       "robots_url": "https://www.quantconnect.com/robots.txt",
       "seed_urls": [
         "https://www.quantconnect.com/docs/v2/writing-algorithms",
@@ -93,7 +90,9 @@
       "name": "arXiv q-fin",
       "base_url": "https://arxiv.org",
       "sitemap_url": null,
-      "include_patterns": ["/abs/"],
+      "include_patterns": [
+        "/abs/"
+      ],
       "robots_url": "https://arxiv.org/robots.txt",
       "seed_urls": [
         "https://arxiv.org/list/q-fin.TR/recent",
@@ -117,7 +116,9 @@
       "name": "QuantConnect Forum",
       "base_url": "https://www.quantconnect.com",
       "sitemap_url": null,
-      "include_patterns": ["/forum/discussion/"],
+      "include_patterns": [
+        "/forum/discussion/"
+      ],
       "robots_url": "https://www.quantconnect.com/robots.txt",
       "seed_urls": [
         "https://www.quantconnect.com/forum/",
@@ -129,24 +130,13 @@
       "name": "Hudson & Thames (MLFinLab blog)",
       "base_url": "https://hudsonthames.org",
       "sitemap_url": "https://hudsonthames.org/sitemap.xml",
-      "include_patterns": ["/posts/", "/blog/"],
+      "include_patterns": [
+        "/posts/",
+        "/blog/"
+      ],
       "robots_url": "https://hudsonthames.org/robots.txt",
       "seed_urls": [
-        "https://hudsonthames.org/articles/",
-        "https://hudsonthames.org/an-introduction-to-cointegration/",
-        "https://hudsonthames.org/optimal-mean-reverting-portfolios/",
-        "https://hudsonthames.org/the-trend-filtering-algorithm/"
-      ]
-    },
-    {
-      "name": "Alpha Architect",
-      "base_url": "https://alphaarchitect.com",
-      "sitemap_url": "https://alphaarchitect.com/sitemap.xml",
-      "include_patterns": ["/blog/", "/research/"],
-      "robots_url": "https://alphaarchitect.com/robots.txt",
-      "seed_urls": [
-        "https://alphaarchitect.com/blog/",
-        "https://alphaarchitect.com/research/"
+        "https://hudsonthames.org/an-introduction-to-cointegration/"
       ]
     }
   ]

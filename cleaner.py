@@ -11,6 +11,8 @@ from config import CLEAN_DIR, RAW_DIR, ensure_dirs
 
 console = Console()
 
+MIN_CHARS = 1500  # below this, a page is likely an index / scaffold, not an article
+
 
 def clean_html(html: str, url: str | None = None) -> str | None:
     """Return extracted main text, or None if extraction failed / text too short."""
@@ -25,7 +27,7 @@ def clean_html(html: str, url: str | None = None) -> str | None:
     if not text:
         return None
     cleaned = text.strip()
-    if len(cleaned) < 200:
+    if len(cleaned) < MIN_CHARS:
         return None
     return cleaned
 
