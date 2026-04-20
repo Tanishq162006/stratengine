@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stratengine"
+version = "0.1.0"
+description = "Quant strategy research pipeline: articles -> Strategy Cards -> retrieval -> multi-agent synthesis -> Backtrader evaluation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Tanishq Jain", email = "tanisshqajain@gmail.com" }]
+keywords = ["quant", "trading", "backtesting", "llm", "rag", "strategy"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Private :: Do Not Upload",
+]
+
+dependencies = [
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "trafilatura>=1.12",
+    "pydantic>=2.7",
+    "chromadb>=0.5",
+    "anthropic>=0.39",
+    "backtrader>=1.9.78",
+    "python-dotenv>=1.0",
+    "rich>=13.7",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+stratengine = "run:app"
+
+[project.urls]
+Homepage = "https://github.com/Tanishq162006/stratengine"
+Issues = "https://github.com/Tanishq162006/stratengine/issues"
+
+[tool.setuptools]
+py-modules = [
+    "config",
+    "crawler",
+    "cleaner",
+    "extractor",
+    "indexer",
+    "retriever",
+    "generator",
+    "evaluator",
+    "playbook_generator",
+    "decision_scorer",
+    "run",
+]
+
+[tool.setuptools.packages.find]
+include = ["schema*"]
+exclude = ["tests*", "data*", "memory*"]
+
+[tool.setuptools.package-data]
+"*" = ["prompts/*.txt", "sources/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
