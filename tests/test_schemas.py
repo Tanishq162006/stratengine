@@ -39,11 +39,12 @@ def _make_card() -> StrategyCard:
         code_hints=["if rsi < 10 and close > sma200: buy"],
         confidence=0.7,
         manual_playbook=ManualPlaybook(
-            thesis="Short-term oversold bounces in uptrends",
-            signal_checklist=["RSI(2) below 10", "Above 200-day SMA"],
-            confirmation=["Bullish candle close"],
-            invalidation=["Close below 200 SMA"],
-            risk_notes=["Avoid during VIX > 35"],
+            checklist=["RSI(2) below 10", "Above 200-day SMA", "VIX below 35"],
+            decision_tree="if RSI(2)<10 and Close>SMA(200) and VIX<35 then long; exit when RSI(2)>70",
+            signal_summary="Short-term oversold bounces in uptrends, gated by VIX regime.",
+            regime_notes="Works in mean-reverting bull markets; fails in strong downtrends.",
+            sizing_framework="Volatility-targeted 0.5% daily dollar vol per trade, max 10% position.",
+            risk_protocol="3 ATR stop below entry, max 2% portfolio risk per trade, no stacking correlated mean-reversion trades.",
         ),
         tags=["spy", "rsi2"],
     )

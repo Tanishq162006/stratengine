@@ -29,6 +29,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "rich>=13.7",
     "typer>=0.12",
+    "pandas>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +54,9 @@ py-modules = [
     "evaluator",
     "playbook_generator",
     "decision_scorer",
+    "manual_critic",
+    "source_quality",
+    "dedup",
     "run",
 ]
 

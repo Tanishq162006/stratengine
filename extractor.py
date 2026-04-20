@@ -12,6 +12,7 @@ from rich.console import Console
 
 from config import CARDS_DIR, CLEAN_DIR, PROMPTS_DIR, ensure_dirs, load_settings
 from schema import StrategyCard
+import source_quality
 
 console = Console()
 
@@ -89,12 +90,16 @@ def extract_all() -> list[dict]:
             card = extract_card(article_text, meta.get("source_name", "unknown"), meta["url"])
         except Exception as e:
             console.log(f"[red]extract error[/] {meta['url']}: {e}")
+            source_quality.record_extraction(meta.get("source_name", "unknown"), success=False)
             results.append({**meta, "status": "error", "error": str(e)})
             continue
+        src = meta.get("source_name", "unknown")
         if card is None:
+            source_quality.record_extraction(src, success=False)
             results.append({**meta, "status": "skipped"})
             continue
         out_path.write_text(card.model_dump_json(indent=2))
+        source_quality.record_extraction(src, success=True, card_confidence=card.confidence)
         console.log(f"[green]card[/] {meta['url']} -> {out_path.name}")
         results.append({**meta, "status": "ok", "card_id": card.card_id})
     summary = CARDS_DIR / "_extract_summary.json"

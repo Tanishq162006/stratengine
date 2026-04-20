@@ -96,13 +96,14 @@ class PositionSizing(BaseModel):
 
 
 class ManualPlaybook(BaseModel):
-    """Discretionary trader-facing summary."""
+    """Discretionary trader-facing summary extracted per card."""
 
-    thesis: str
-    signal_checklist: list[str] = Field(default_factory=list)
-    confirmation: list[str] = Field(default_factory=list)
-    invalidation: list[str] = Field(default_factory=list)
-    risk_notes: list[str] = Field(default_factory=list)
+    checklist: list[str] = Field(default_factory=list)
+    decision_tree: str = ""
+    signal_summary: str = ""
+    regime_notes: str = ""
+    sizing_framework: str = ""
+    risk_protocol: str = ""
 
 
 class StrategyCard(BaseModel):
