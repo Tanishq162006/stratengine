@@ -10,6 +10,7 @@ from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import StrategyCard, TradingContext
+import prompt_logger
 
 console = Console()
 
@@ -57,13 +58,25 @@ def generate_playbooks(ctx: TradingContext, cards: list[StrategyCard]) -> dict:
         trading_context_json=ctx.model_dump_json(indent=2),
         cards_json=json.dumps([json.loads(c.model_dump_json()) for c in cards], indent=2),
     )
-    resp = client.messages.create(
-        model=s.synth_model,
-        max_tokens=6000,
-        messages=[{"role": "user", "content": prompt}],
+    log_id = prompt_logger.log_call(
+        "playbook.txt",
+        context=ctx.model_dump(mode="json"),
+        input_obj={"n_cards": len(cards)},
     )
-    text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
-    data = _extract_json(text)
+    try:
+        resp = client.messages.create(
+            model=s.synth_model,
+            max_tokens=6000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        data = _extract_json(text)
+    except Exception as e:
+        prompt_logger.finalize(log_id, "failure", notes=str(e))
+        raise
+    prompt_logger.finalize(
+        log_id, "success", metric=float(len(data.get("playbooks", [])))
+    )
 
     playbooks = data.get("playbooks", [])
     warnings: list[str] = []

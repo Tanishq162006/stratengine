@@ -1,0 +1,38 @@
+{
+  "name": "imc_prosperity",
+  "description": "IMC Prosperity competition (discrete rounds, per-product strategies on a shared simulator).",
+  "round_context_defaults": {
+    "competition": "imc_prosperity",
+    "asset_classes": ["multi_asset"],
+    "timeframe": "1m",
+    "backtest_start": "2024-01-01",
+    "backtest_end": "2024-01-10",
+    "starting_capital": 100000.0,
+    "max_leverage": 1.0,
+    "transaction_cost_bps": 0.0,
+    "slippage_bps": 0.0,
+    "max_drawdown": null,
+    "objective": "total_return",
+    "preferred_strategy_families": ["market_making", "mean_reversion", "arbitrage", "momentum"]
+  },
+  "code_skeleton": "from datamodel import OrderDepth, TradingState, Order\\nfrom typing import List\\n\\nclass Trader:\\n    def run(self, state: TradingState):\\n        result = {}\\n        for product, depth in state.order_depths.items():\\n            orders: List[Order] = []\\n            # TODO: strategy logic per product\\n            result[product] = orders\\n        traderData = \\\"\\\"\\n        conversions = 0\\n        return result, conversions, traderData\\n",
+  "anti_patterns": [
+    "Using live market data assumptions: Prosperity has its own fake products and liquidity profiles.",
+    "Assuming free, unbounded shorts: products have position limits and symmetric long/short caps.",
+    "Copy-pasting per-product code without regime-awareness: products change behavior between rounds.",
+    "Ignoring `observations` / conversions in later rounds.",
+    "Treating round 4/5 manual sections as algorithmic."
+  ],
+  "submission_requirements": [
+    "Single Trader class with run(state) method.",
+    "Import only from `datamodel` and stdlib.",
+    "No external network calls, no disk I/O.",
+    "Sub-900ms per tick execution."
+  ],
+  "past_round_notes": [
+    "Mean-reversion with inventory-aware quoting tends to win market-making products.",
+    "Pair trading works when two products have stable spreads in backtests but can collapse under volatility.",
+    "Orchids / conversion-heavy products punish naive traders who ignore storage/conversion costs."
+  ],
+  "prompt_addendum": "Context: IMC Prosperity. The code must expose a `Trader` class with a `run(state)` method. Do NOT use Backtrader; use the Prosperity SDK types from `datamodel`. Do NOT print STRATENGINE_STATS — instead return (orders_by_product, conversions, trader_data)."
+}

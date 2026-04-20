@@ -12,6 +12,7 @@ from rich.console import Console
 
 from config import CARDS_DIR, CLEAN_DIR, PROMPTS_DIR, ensure_dirs, load_settings
 from schema import StrategyCard
+import prompt_logger
 import source_quality
 
 console = Console()
@@ -53,20 +54,30 @@ def extract_card(article_text: str, source_name: str, url: str) -> StrategyCard 
         url=url,
         article_text=article_text[:40_000],
     )
-    resp = client.messages.create(
-        model=settings.extract_model,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
+    log_id = prompt_logger.log_call(
+        "extract.txt", context={"url": url, "source": source_name}, input_obj={"len": len(article_text)}
     )
-    text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
-    data = _extract_json(text)
+    try:
+        resp = client.messages.create(
+            model=settings.extract_model,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+        data = _extract_json(text)
+    except Exception as e:
+        prompt_logger.finalize(log_id, "failure", notes=str(e))
+        raise
     if data.get("skip"):
         console.log(f"[yellow]skip[/] {url}: {data.get('reason')}")
+        prompt_logger.finalize(log_id, "failure", notes=f"skip: {data.get('reason')}")
         return None
     data.setdefault("card_id", _stable_card_id(url, data.get("title", "untitled")))
     data.setdefault("url", url)
     data.setdefault("source", source_name)
-    return StrategyCard.model_validate(data)
+    card = StrategyCard.model_validate(data)
+    prompt_logger.finalize(log_id, "success", metric=card.confidence, output_id=card.card_id)
+    return card
 
 
 def extract_all() -> list[dict]:

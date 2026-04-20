@@ -24,8 +24,15 @@ from manual_critic import attach_critiques, critique_playbooks, filter_by_verdic
 from playbook_generator import generate_playbooks
 from retriever import retrieve
 from schema import RoundContext, TradingContext
+import dashboard as dashboard_mod
 import dedup as dedup_mod
+import family_analyzer
+import prompt_analyzer
+import report_generator
+import source_discoverer
 import source_quality as sq_mod
+from source_refresher import refresh_all
+from template_loader import load_template, merge_defaults, prompt_addendum
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 console = Console()
@@ -120,10 +127,17 @@ def round(
     skip_scenarios: bool = typer.Option(
         False, help="Skip historical scenario scoring (manual mode)."
     ),
+    template: Optional[str] = typer.Option(
+        None, help="Competition template to fill defaults: imc_prosperity | worldquant_iqc | quantconnect."
+    ),
 ) -> None:
     """Retrieve + generate + evaluate for a single round."""
     ensure_dirs()
     raw = json.loads(context.read_text())
+    if template:
+        tpl = load_template(template)
+        raw = merge_defaults(raw, tpl)
+        console.print(f"[cyan]template {template}:[/] {prompt_addendum(tpl)[:120]}...")
     round_id = f"{int(time.time())}"
 
     if mode == "algo":
@@ -296,6 +310,104 @@ def source_report() -> None:
             f"{r.playbook_clarity_score:.2f}",
             samples,
         )
+    console.print(table)
+
+
+@app.command("refresh")
+def refresh_cmd(
+    seeds: Path = Path("sources/seeds.json"),
+    quiet: bool = typer.Option(False, help="Cron-friendly: suppress interactive output."),
+) -> None:
+    """Detect new content on known sources and fetch it."""
+    summaries = asyncio.run(refresh_all(seeds, quiet=quiet))
+    total_new = sum(len(s.new_fetched) for s in summaries)
+    total_exist = sum(len(s.skipped_existing) for s in summaries)
+    console.print(f"[bold green]Refresh:[/] new={total_new}  existing={total_exist}")
+
+
+@app.command("report")
+def report_cmd(
+    context: Path = typer.Option(..., help="Path to RoundContext or TradingContext JSON."),
+    mode: str = typer.Option("algo", help="'algo' or 'manual'."),
+    top_k: int = 10,
+    data: Optional[Path] = None,
+    prices_dir: Optional[Path] = None,
+    skip_scenarios: bool = False,
+) -> None:
+    """Zero-touch: context in, markdown report out."""
+    out = report_generator.generate_report(
+        context, mode=mode, top_k=top_k, data=data, prices_dir=prices_dir, skip_scenarios=skip_scenarios
+    )
+    console.print(f"[green]Report:[/] {out}")
+
+
+@app.command("optimize-weights")
+def optimize_weights_cmd() -> None:
+    """Fit retrieval weights on >=10 rounds of memory."""
+    import weight_optimizer
+
+    rows_path = Path("memory/retrieval_features.jsonl")
+    if not rows_path.exists():
+        console.print(
+            "[yellow]No retrieval_features.jsonl found at memory/retrieval_features.jsonl. "
+            "Run rounds to populate it.[/]"
+        )
+        raise typer.Exit(code=1)
+    rows = [json.loads(l) for l in rows_path.read_text().splitlines() if l.strip()]
+    fitted = weight_optimizer.fit(rows)
+    console.print(f"[green]Fitted[/] on {fitted.n_rounds} rounds: {fitted.weights}")
+
+
+@app.command("discover-sources")
+def discover_cmd(min_count: int = 3, max_gaps: int = 10) -> None:
+    """Propose new sources to fill coverage gaps."""
+    new = source_discoverer.propose(min_count=min_count, max_gaps=max_gaps)
+    console.print(f"[green]Proposed[/] {len(new)} gaps -> sources/proposed.json")
+    for p in new[:5]:
+        console.print(f"  - {p.gap.asset_class}/{p.gap.strategy_family} (count={p.gap.count})")
+
+
+@app.command("dashboard")
+def dashboard_cmd() -> None:
+    """Full system status."""
+    dashboard_mod.render()
+
+
+@app.command("prompt-report")
+def prompt_report_cmd() -> None:
+    """Per-prompt success rates."""
+    stats = prompt_analyzer.per_template_stats()
+    if not stats:
+        console.print("[yellow]No prompt log entries yet.[/]")
+        return
+    table = Table(title="Prompt performance")
+    for col in ("Template", "Version", "n", "Success", "Failure", "Pending", "Mean metric"):
+        table.add_column(col)
+    for s in stats:
+        table.add_row(
+            s.template,
+            s.version,
+            str(s.n_total),
+            str(s.n_success),
+            str(s.n_failure),
+            str(s.n_pending),
+            f"{s.mean_metric:.3f}" if s.mean_metric is not None else "-",
+        )
+    console.print(table)
+
+
+@app.command("family-report")
+def family_report_cmd(round_type: Optional[str] = None) -> None:
+    """Per-family win rates."""
+    rows = family_analyzer.ranked_win_rates(round_type=round_type)
+    if not rows:
+        console.print("[yellow]No family performance data yet.[/]")
+        return
+    table = Table(title=f"Family win rates {'(all)' if not round_type else f'({round_type})'}")
+    for col in ("Family", "n", "Wins", "Rate"):
+        table.add_column(col)
+    for r in rows:
+        table.add_row(r.family, str(r.n), str(r.wins), f"{r.rate:.3f}")
     console.print(table)
 
 

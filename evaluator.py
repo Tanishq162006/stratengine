@@ -20,6 +20,7 @@ from pathlib import Path
 from rich.console import Console
 
 from schema import RoundContext
+import family_performance
 
 console = Console()
 
@@ -113,6 +114,20 @@ def _score(stats: dict, round_ctx: RoundContext) -> tuple[float, list[str]]:
     return base - penalty, violations
 
 
+def _log_family_outcome(candidate: dict, round_ctx: RoundContext, result: "BacktestResult") -> None:
+    family_performance.log_result(
+        round_type=round_ctx.competition,
+        mode="algo",
+        strategy_family=candidate.get("strategy_family", "other"),
+        asset_class=candidate.get("asset_class", "unknown"),
+        timeframe=candidate.get("timeframe", "multi"),
+        sharpe=(result.stats or {}).get("sharpe"),
+        drawdown=(result.stats or {}).get("max_drawdown"),
+        final_rank=None,  # filled in by caller after ranking, optional
+        success=bool(result.ok and not result.violations and (result.stats or {}).get("sharpe", 0) > 0),
+    )
+
+
 def evaluate(
     candidate: dict,
     code: str,
@@ -128,7 +143,7 @@ def evaluate(
     stats = _parse_stats(stdout)
     ok = rc == 0 and stats is not None
     if not ok:
-        return BacktestResult(
+        res = BacktestResult(
             candidate_name=candidate.get("name", "unnamed"),
             ok=False,
             stats=stats or {},
@@ -138,6 +153,8 @@ def evaluate(
             score=-1e9,
             violations=["backtest did not return STRATENGINE_STATS"],
         )
+        _log_family_outcome(candidate, round_ctx, res)
+        return res
 
     slice_results: list[dict] = []
     for s_start, s_end in robustness_slices or []:
@@ -155,7 +172,7 @@ def evaluate(
             robustness_penalty += 1.0
 
     base_score, violations = _score(stats, round_ctx)
-    return BacktestResult(
+    res = BacktestResult(
         candidate_name=candidate.get("name", "unnamed"),
         ok=True,
         stats=stats,
@@ -165,6 +182,8 @@ def evaluate(
         score=base_score - robustness_penalty,
         violations=violations,
     )
+    _log_family_outcome(candidate, round_ctx, res)
+    return res
 
 
 def rank(results: list[BacktestResult]) -> list[BacktestResult]:

@@ -1,0 +1,37 @@
+{
+  "name": "worldquant_iqc",
+  "description": "WorldQuant International Quant Championship. Alpha expressions evaluated on WQ BRAIN.",
+  "round_context_defaults": {
+    "competition": "worldquant_iqc",
+    "asset_classes": ["equity"],
+    "timeframe": "1d",
+    "backtest_start": "2020-01-01",
+    "backtest_end": "2024-12-31",
+    "starting_capital": 0.0,
+    "max_leverage": 1.0,
+    "transaction_cost_bps": 5.0,
+    "slippage_bps": 2.0,
+    "objective": "sharpe",
+    "preferred_strategy_families": ["factor", "mean_reversion", "momentum", "ml_predictive"]
+  },
+  "code_skeleton": "# WQ BRAIN alpha expression (pseudocode; real submission is in the BRAIN IDE).\\n# Example: rank(-delta(close, 5)) -> mean-reversion factor over 5-day change.\\n\\nalpha = rank(-ts_mean(returns, 10))\\n",
+  "anti_patterns": [
+    "Using look-ahead operators (future prices, future fundamentals).",
+    "Dividing by a value that can be zero (avoid implicit NaN/Inf).",
+    "Over-fit IS Sharpe that collapses OOS: IQC rewards universality, not a single period.",
+    "Ignoring neutralization: raw returns without sector/market neutralization typically underperform.",
+    "Submitting alphas with < 65% turnover — BRAIN filters these as inactive."
+  ],
+  "submission_requirements": [
+    "Alpha expression using BRAIN operators only.",
+    "Positive OOS Sharpe, OOS IR, passes universality + weight checks.",
+    "Turnover within bracket (typically 3%-60%).",
+    "Max weight per stock respected."
+  ],
+  "past_round_notes": [
+    "Cross-sectional rank operators (rank, ts_rank) generalize better than raw-scale signals.",
+    "Volatility-targeted signals (signal / std) produce steadier Sharpes.",
+    "Combining two weakly-correlated alphas via rank-averaging often beats either alone."
+  ],
+  "prompt_addendum": "Context: WorldQuant IQC. Output an alpha expression using the WQ BRAIN operator set (rank, ts_mean, delta, ts_std, scale, sign, signed_power, ...). Do NOT output a Backtrader script. Optimize for OOS Sharpe, not IS."
+}

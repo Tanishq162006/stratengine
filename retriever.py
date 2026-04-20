@@ -5,6 +5,7 @@ from typing import Union
 
 from rich.console import Console
 
+from family_performance import boost_for as family_boost
 from indexer import load_card, query
 from schema import RoundContext, StrategyCard, TradingContext
 from source_quality import NEUTRAL_DEFAULT, score_for
@@ -63,6 +64,7 @@ def retrieve(
     # Over-fetch 3x so source-quality reweighting + cluster diversification have headroom.
     raw_hits = query(qtext, where=where, top_k=top_k * 3)
 
+    round_type = getattr(ctx, "competition", None) or getattr(ctx, "trader_style", None)
     scored: list[tuple[float, StrategyCard]] = []
     for h in raw_hits:
         c = load_card(h["card_id"])
@@ -70,7 +72,8 @@ def retrieve(
             continue
         distance = h.get("distance") or 0.0
         sq = score_for(c.source) - NEUTRAL_DEFAULT
-        composite = -distance + 0.15 * sq
+        fam_mult = family_boost(c.strategy_family.value, round_type)  # ~[0.5, 1.5]
+        composite = (-distance + 0.15 * sq) * fam_mult
         scored.append((composite, c))
     scored.sort(key=lambda t: t[0], reverse=True)
 

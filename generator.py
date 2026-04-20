@@ -10,6 +10,7 @@ from rich.console import Console
 
 from config import PROMPTS_DIR, load_settings
 from schema import RoundContext, StrategyCard
+import prompt_logger
 
 console = Console()
 
@@ -57,8 +58,19 @@ def synthesize(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:
         round_context_json=round_ctx.model_dump_json(indent=2),
         cards_json=json.dumps([json.loads(c.model_dump_json()) for c in cards], indent=2),
     )
-    text = _call(s.synth_model, prompt)
-    return _extract_json(text)
+    log_id = prompt_logger.log_call(
+        "synthesize.txt",
+        context=round_ctx.model_dump(mode="json"),
+        input_obj={"n_cards": len(cards)},
+    )
+    try:
+        text = _call(s.synth_model, prompt)
+        data = _extract_json(text)
+    except Exception as e:
+        prompt_logger.finalize(log_id, "failure", notes=str(e))
+        raise
+    prompt_logger.finalize(log_id, "success", metric=float(len(data.get("candidates", []))))
+    return data
 
 
 def critique(round_ctx: RoundContext, candidates: list[dict]) -> dict:
@@ -69,8 +81,19 @@ def critique(round_ctx: RoundContext, candidates: list[dict]) -> dict:
         round_context_json=round_ctx.model_dump_json(indent=2),
         candidates_json=json.dumps(candidates, indent=2),
     )
-    text = _call(s.critic_model, prompt)
-    return _extract_json(text)
+    log_id = prompt_logger.log_call(
+        "critic.txt",
+        context=round_ctx.model_dump(mode="json"),
+        input_obj={"n_candidates": len(candidates)},
+    )
+    try:
+        text = _call(s.critic_model, prompt)
+        data = _extract_json(text)
+    except Exception as e:
+        prompt_logger.finalize(log_id, "failure", notes=str(e))
+        raise
+    prompt_logger.finalize(log_id, "success", metric=float(len(data.get("reviews", []))))
+    return data
 
 
 def code_for(round_ctx: RoundContext, candidate: dict) -> str:
@@ -81,9 +104,20 @@ def code_for(round_ctx: RoundContext, candidate: dict) -> str:
         round_context_json=round_ctx.model_dump_json(indent=2),
         candidate_json=json.dumps(candidate, indent=2),
     )
-    text = _call(s.coder_model, prompt, max_tokens=6000)
-    # strip accidental markdown fences
+    log_id = prompt_logger.log_call(
+        "code.txt",
+        context=round_ctx.model_dump(mode="json"),
+        input_obj={"candidate": candidate.get("name")},
+    )
+    try:
+        text = _call(s.coder_model, prompt, max_tokens=6000)
+    except Exception as e:
+        prompt_logger.finalize(log_id, "failure", notes=str(e))
+        raise
     code = re.sub(r"^```(?:python)?\s*\n|\n```\s*$", "", text.strip(), flags=re.MULTILINE)
+    prompt_logger.finalize(
+        log_id, "success", metric=float(len(code)), output_id=candidate.get("name")
+    )
     return code
 
 

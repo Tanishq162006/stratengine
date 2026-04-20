@@ -1,0 +1,37 @@
+{
+  "name": "quantconnect",
+  "description": "QuantConnect LEAN algorithms. Python class inheriting QCAlgorithm.",
+  "round_context_defaults": {
+    "competition": "quantconnect",
+    "asset_classes": ["equity"],
+    "timeframe": "1d",
+    "backtest_start": "2018-01-01",
+    "backtest_end": "2023-12-31",
+    "starting_capital": 100000.0,
+    "max_leverage": 1.0,
+    "transaction_cost_bps": 5.0,
+    "slippage_bps": 2.0,
+    "objective": "sharpe",
+    "preferred_strategy_families": ["momentum", "mean_reversion", "factor", "trend_following"]
+  },
+  "code_skeleton": "from AlgorithmImports import *\\n\\nclass StrategyAlgorithm(QCAlgorithm):\\n    def Initialize(self):\\n        self.SetStartDate(2018, 1, 1)\\n        self.SetEndDate(2023, 12, 31)\\n        self.SetCash(100000)\\n        self.symbol = self.AddEquity(\\\"SPY\\\", Resolution.Daily).Symbol\\n        # TODO: indicators / universe\\n\\n    def OnData(self, data: Slice):\\n        if not self.Portfolio.Invested:\\n            self.SetHoldings(self.symbol, 1)\\n",
+  "anti_patterns": [
+    "Forgetting to call SetWarmUp for indicators (first bars produce NaN signals).",
+    "Universe selection inside OnData (should be in CoarseSelectionFunction).",
+    "Calling History() every bar — latency balloon.",
+    "Using datetime.now() — LEAN replays; use self.Time.",
+    "Market orders at close without time-in-force awareness."
+  ],
+  "submission_requirements": [
+    "Class inherits QCAlgorithm.",
+    "Initialize() sets start/end/cash.",
+    "OnData(Slice) implemented.",
+    "Uses AddEquity/AddFuture/etc, not ad-hoc data fetching."
+  ],
+  "past_round_notes": [
+    "Pure trend-following on SPY + bonds beats most sophisticated ideas on risk-adjusted metrics.",
+    "Intraday strategies often fail due to ignored liquidity/slippage.",
+    "Framework-based algorithms (Alpha + PortfolioConstruction + Risk + Execution) usually outperform monolithic OnData implementations."
+  ],
+  "prompt_addendum": "Context: QuantConnect LEAN. Output a Python algorithm subclassing QCAlgorithm with Initialize() and OnData(). Use AlgorithmImports. Do NOT print STRATENGINE_STATS or use Backtrader."
+}
