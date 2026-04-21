@@ -25,43 +25,20 @@
         "https://www.quantstart.com/articles/Sharpe-Ratio-as-a-Risk-Measure-for-Algorithmic-Trading/",
         "https://www.quantstart.com/articles/Kelly-Criterion-for-Money-Management/",
         "https://www.quantstart.com/articles/How-to-Handle-Survivorship-Bias-in-Backtesting/",
-        "https://www.quantstart.com/articles/Regime-Detection-for-Algorithmic-Trading/"
+        "https://www.quantstart.com/articles/Regime-Detection-for-Algorithmic-Trading/",
+        "https://www.quantstart.com/articles/Black-Scholes-Option-Pricing-Model-In-Python/",
+        "https://www.quantstart.com/articles/Options-Pricing-The-Problems-with-Black-Scholes/",
+        "https://www.quantstart.com/articles/Delta-Hedging-for-Options-Trading/",
+        "https://www.quantstart.com/articles/Cointegrated-Augmented-Dickey-Fuller-Test-for-Pairs-Trading-Evaluation-in-Python/",
+        "https://www.quantstart.com/articles/Hurst-Exponent-Python/",
+        "https://www.quantstart.com/articles/Statistical-Arbitrage-Pairs-Trading-Strategies-Overview-and-Cointegration/"
       ]
     },
     {
-      "name": "Backtrader",
-      "base_url": "https://www.backtrader.com",
-      "sitemap_url": null,
-      "include_patterns": ["/docu/", "/blog/"],
-      "robots_url": "https://www.backtrader.com/robots.txt",
-      "seed_urls": [
-        "https://www.backtrader.com/docu/quickstart/quickstart/",
-        "https://www.backtrader.com/docu/strategy/",
-        "https://www.backtrader.com/docu/sizers/sizers/",
-        "https://www.backtrader.com/docu/analyzers/analyzers/",
-        "https://www.backtrader.com/docu/commission-schemes/commission-schemes/"
-      ]
-    },
-    {
-      "name": "QuantConnect Docs",
-      "base_url": "https://www.quantconnect.com",
-      "sitemap_url": null,
-      "include_patterns": ["/docs/v2/", "/learning/"],
-      "robots_url": "https://www.quantconnect.com/robots.txt",
-      "seed_urls": [
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/indicators",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/universes",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/alpha",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/risk-management",
-        "https://www.quantconnect.com/learning/course/1/Boot-Camp-101"
-      ]
-    },
-    {
-      "name": "arXiv — Market Making",
+      "name": "arXiv — Market Making & Stat Arb",
       "base_url": "https://arxiv.org",
       "sitemap_url": null,
-      "include_patterns": ["/abs/", "/html/"],
+      "include_patterns": ["/abs/"],
       "robots_url": "https://arxiv.org/robots.txt",
       "seed_urls": [
         "https://arxiv.org/abs/1811.06520",
@@ -81,23 +58,20 @@
         "https://arxiv.org/abs/1812.03955",
         "https://arxiv.org/abs/2004.10024",
         "https://arxiv.org/abs/1610.05868",
-        "https://arxiv.org/abs/2003.05611",
         "https://arxiv.org/abs/1910.03743",
         "https://arxiv.org/abs/1806.05695",
         "https://arxiv.org/abs/2106.00123",
         "https://arxiv.org/abs/1707.01625",
         "https://arxiv.org/abs/2009.14071",
-        "https://arxiv.org/abs/1901.08740"
-      ]
-    },
-    {
-      "name": "Hudson & Thames",
-      "base_url": "https://hudsonthames.org",
-      "sitemap_url": "https://hudsonthames.org/sitemap.xml",
-      "include_patterns": ["/posts/", "/blog/"],
-      "robots_url": "https://hudsonthames.org/robots.txt",
-      "seed_urls": [
-        "https://hudsonthames.org/an-introduction-to-cointegration/"
+        "https://arxiv.org/abs/1901.08740",
+        "https://arxiv.org/abs/1508.04753",
+        "https://arxiv.org/abs/1602.00358",
+        "https://arxiv.org/abs/1912.01771",
+        "https://arxiv.org/abs/2101.02867",
+        "https://arxiv.org/abs/1910.14140",
+        "https://arxiv.org/abs/2005.12191",
+        "https://arxiv.org/abs/1802.03426",
+        "https://arxiv.org/abs/1403.5949"
       ]
     },
     {
@@ -116,38 +90,15 @@
         "https://quantpedia.com/strategies/market-making-via-reinforcement-learning/",
         "https://quantpedia.com/strategies/intraday-momentum/",
         "https://quantpedia.com/strategies/mean-reversion-in-option-implied-volatility/",
-        "https://quantpedia.com/strategies/kalman-filter-for-pairs-trading/"
+        "https://quantpedia.com/strategies/kalman-filter-for-pairs-trading/",
+        "https://quantpedia.com/strategies/index-arbitrage/",
+        "https://quantpedia.com/strategies/etf-arbitrage/",
+        "https://quantpedia.com/strategies/dispersion-trading/",
+        "https://quantpedia.com/strategies/volatility-arbitrage/"
       ]
     },
     {
-      "name": "GitHub — IMC Prosperity Solutions",
-      "base_url": "https://raw.githubusercontent.com",
-      "sitemap_url": null,
-      "include_patterns": [],
-      "robots_url": null,
-      "seed_urls": [
-        "https://raw.githubusercontent.com/jmerle/imc-prosperity-3-backtester/main/README.md",
-        "https://raw.githubusercontent.com/n-destin/IMC-Prosperity-2/main/trader.py",
-        "https://raw.githubusercontent.com/terryluzijian/imc-prosperity-3/main/README.md",
-        "https://raw.githubusercontent.com/picktim/imc-prosperity/main/README.md"
-      ]
-    },
-    {
-      "name": "arXiv HTML — Avellaneda Stoikov",
-      "base_url": "https://arxiv.org",
-      "sitemap_url": null,
-      "include_patterns": ["/html/"],
-      "robots_url": "https://arxiv.org/robots.txt",
-      "seed_urls": [
-        "https://arxiv.org/html/2105.13103",
-        "https://arxiv.org/html/2302.06226",
-        "https://arxiv.org/html/1910.03743",
-        "https://arxiv.org/html/2206.14498",
-        "https://arxiv.org/html/2107.14140"
-      ]
-    },
-    {
-      "name": "QuantLib / OpenQuant Docs",
+      "name": "Quant Stack Exchange",
       "base_url": "https://quant.stackexchange.com",
       "sitemap_url": null,
       "include_patterns": ["/questions/"],
@@ -162,7 +113,15 @@
         "https://quant.stackexchange.com/questions/29026/how-do-i-detect-regime-changes",
         "https://quant.stackexchange.com/questions/3610/momentum-alpha-signal-in-algorithmic-trading",
         "https://quant.stackexchange.com/questions/9269/mean-reversion-strategy-for-pairs-trading",
-        "https://quant.stackexchange.com/questions/38862/how-to-handle-inventory-risk-in-market-making"
+        "https://quant.stackexchange.com/questions/38862/how-to-handle-inventory-risk-in-market-making",
+        "https://quant.stackexchange.com/questions/122/what-are-the-key-components-of-a-pairs-trading-strategy",
+        "https://quant.stackexchange.com/questions/12012/basket-trading-and-arbitrage",
+        "https://quant.stackexchange.com/questions/2176/how-to-hedge-a-basket-option",
+        "https://quant.stackexchange.com/questions/54005/index-arbitrage-strategy",
+        "https://quant.stackexchange.com/questions/47428/conversion-arbitrage-in-options",
+        "https://quant.stackexchange.com/questions/25866/delta-neutral-options-strategy",
+        "https://quant.stackexchange.com/questions/8782/implied-volatility-surface-trading",
+        "https://quant.stackexchange.com/questions/35195/volatility-arbitrage-strategy"
       ]
     },
     {
@@ -173,13 +132,55 @@
       "robots_url": "https://www.investopedia.com/robots.txt",
       "seed_urls": [
         "https://www.investopedia.com/articles/trading/04/011404.asp",
-        "https://www.investopedia.com/articles/active-trading/091114/high-frequency-trading-how-its-done.asp",
         "https://www.investopedia.com/articles/trading/07/statarb.asp",
         "https://www.investopedia.com/terms/k/kellycriterion.asp",
         "https://www.investopedia.com/terms/m/marketmaker.asp",
         "https://www.investopedia.com/terms/b/bollingerbands.asp",
-        "https://www.investopedia.com/articles/trading/05/011705.asp",
-        "https://www.investopedia.com/terms/m/meanreversion.asp"
+        "https://www.investopedia.com/terms/m/meanreversion.asp",
+        "https://www.investopedia.com/terms/a/arbitrage.asp",
+        "https://www.investopedia.com/terms/b/basket.asp",
+        "https://www.investopedia.com/terms/d/deltahedging.asp",
+        "https://www.investopedia.com/terms/i/impliedvolatility.asp",
+        "https://www.investopedia.com/terms/c/conversionarbitrage.asp",
+        "https://www.investopedia.com/terms/s/statisticalarbitrage.asp",
+        "https://www.investopedia.com/terms/o/optionspricingtheory.asp"
+      ]
+    },
+    {
+      "name": "Backtrader",
+      "base_url": "https://www.backtrader.com",
+      "sitemap_url": null,
+      "include_patterns": ["/docu/", "/blog/"],
+      "robots_url": "https://www.backtrader.com/robots.txt",
+      "seed_urls": [
+        "https://www.backtrader.com/docu/quickstart/quickstart/",
+        "https://www.backtrader.com/docu/strategy/",
+        "https://www.backtrader.com/docu/sizers/sizers/",
+        "https://www.backtrader.com/docu/analyzers/analyzers/",
+        "https://www.backtrader.com/docu/commission-schemes/commission-schemes/"
+      ]
+    },
+    {
+      "name": "Hudson & Thames",
+      "base_url": "https://hudsonthames.org",
+      "sitemap_url": "https://hudsonthames.org/sitemap.xml",
+      "include_patterns": ["/posts/", "/blog/"],
+      "robots_url": "https://hudsonthames.org/robots.txt",
+      "seed_urls": [
+        "https://hudsonthames.org/an-introduction-to-cointegration/"
+      ]
+    },
+    {
+      "name": "GitHub — IMC Prosperity Solutions",
+      "base_url": "https://raw.githubusercontent.com",
+      "sitemap_url": null,
+      "include_patterns": [],
+      "robots_url": null,
+      "seed_urls": [
+        "https://raw.githubusercontent.com/jmerle/imc-prosperity-3-backtester/main/README.md",
+        "https://raw.githubusercontent.com/n-destin/IMC-Prosperity-2/main/trader.py",
+        "https://raw.githubusercontent.com/terryluzijian/imc-prosperity-3/main/README.md",
+        "https://raw.githubusercontent.com/picktim/imc-prosperity/main/README.md"
       ]
     }
   ]
