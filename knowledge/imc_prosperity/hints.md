@@ -2,47 +2,69 @@
 
 ## Round 1 Hints
 
-_Paste Round 1 hints here when available._
+_(Source: Rook-E1 in-game advisor — official IMC Prosperity 4 hints)_
+
+### Auction mechanics (manual round)
+- Clearing price rule: **maximum traded volume first, then highest price wins ties**
+- Your order affects the clearing price itself — account for this when sizing
+- Simulate: change size, change price, observe how clearing price responds
+- Find the price level where volume concentrates — that is the defensible position
+- "Look for the point where volume almost shifts the clearing level. Then add just enough to keep the level intact."
+
+### INTARIAN_PEPPER_ROOT character
+- Grows slowly — supply and demand move in a **controlled, predictable manner**
+- Fewer viable market paths than volatile products → easier to estimate fair value
+- Use historical data to narrow possibilities; you don't need to predict every outcome, just rule out enough
+- Fair value is a **reference point**, not a conclusion — measure it against current bids/asks
+
+### Strategic order placement
+- Profit comes from being **selected**, not just being correct
+- Order must be attractive enough to match but not so generous it collapses your edge
+- Price, size, and timing all influence whether you get matched
+- "If you want to sell, ask why a buyer would choose your offer over the one already waiting"
+- Iterate one variable at a time — nudge price toward the other side until you become interesting
+- Adjust size: too small = ignored, too large = scares the book or reveals your structure
+
+### Volume as the decisive variable
+- In the auction: volume decides first, price follows
+- Add volume at the right level and the balance tips "quietly, decisively"
+- "Too little volume and nothing happens. Too much and you give away structure."
+- The useful range is **narrow** — focus required
 
 ## Round 2 Hints
 
-### MAF bid() strategy
-- Top 50% of bids get extra market access (25% more order book volume)
-- Median is computed from ALL submitted trader.py files; no bid() = bid of 0
-- **You only need to beat the median — not maximize your bid**
-- Negative bids are treated as 0
-- MAF is a one-time deduction: `final_PnL = round2_profit - bid_if_accepted`
-- During testing: only 80% of quotes available (slightly randomized per submission)
-- Extra quotes fit perfectly into existing book distribution — same price/volume pattern
+_(Source: Rook-E1 in-game advisor — official IMC Prosperity 4 hints)_
 
-**Optimal MAF reasoning:**
-Most teams will bid conservatively or not at all (bid=0). A bid of ~100-500 XIRECs likely beats the median easily. Overbidding (e.g. 10,000) guarantees access but costs you. Target: just above estimated median.
+### MAF — cost vs advantage framing
+- "This is not a market valuation problem. It is a **cost-versus-advantage problem**."
+- Calculate the break-even: at what volume does extra access equal the cost of obtaining it?
+- If `fee > value of extra flow` → not worth bidding. If `fee < value` → bid.
+- Include the fee in your effective cost calculation before deciding
 
-**Expected median estimate:** Most participants bid 0 (no bid function) or low amounts. A bid of 200-500 XIRECs is likely sufficient to land in top 50%.
+### MAF — predicting the median (game theory)
+- "The question shifts: not what is access worth to me, but **what do others think it is worth to them**"
+- Underestimate the field → lose access (tempo lost, unrecoverable)
+- Overestimate the field → win access but at a cost that collapses the advantage
+- Cautious field compresses median downward; aggressive field pushes it up
+- "Anticipate where the median lands. Then decide whether beating it at that price still creates real value."
 
-### Invest & Expand optimal allocation
-PnL formula: `Research(r) × Scale(s) × Speed_multiplier − Budget_used`
+### MAF — risk and bid placement
+- You only need to finish top 50% — **not** be the highest bidder
+- "Bid high = blunder dressed as caution" — if you could have secured access for fewer XIRECs, the excess was waste
+- Calculate: how low can you bid while remaining confident you clear the median?
+- Closer to threshold = more efficient but smaller margin for error
+- "Not at the ceiling. Not recklessly close to the floor. Somewhere deliberate. Somewhere defensible."
 
-Where:
-- `research(x) = 200_000 * log(1+x) / log(101)` — logarithmic, diminishing returns
-- `scale(x) = 7 * x / 100` — perfectly linear
-- `speed` = rank-based multiplier 0.1–0.9 based on your % vs all players
+### MAF — do NOT assume cooperation
+- If many participants value access similarly, median stabilizes and looks predictable — **this is a trap**
+- One participant deviating shifts the threshold you positioned against
+- "How much of this strategy depends on others continuing to act as expected? That dependency is not a calculated position. It is an assumption."
+- **Trust the calculation. Not the consensus.**
 
-**Key insight:** Speed is rank-based (competitive), Scale is linear (predictable), Research is logarithmic (heavy diminishing returns above ~40%).
-
-**Optimal strategy reasoning:**
-- Research has logarithmic returns → don't go all-in on research past ~40-50%
-- Scale is linear → pure value per XIREC, always good
-- Speed is zero-sum competitive → if everyone underspends speed, you can win it cheaply
-- Budget_used = sum of your allocations × 500 XIRECs per percent
-- Target: high speed (beat competitors), moderate scale, moderate research
-
-**Example allocation to model:** Speed=40%, Scale=35%, Research=25% — adjust based on expected competitor behavior
-
-### Algorithm notes
+### Algorithm notes for Round 2
 - Same products and limits as Round 1 (limit 80 each)
-- With extra market access: 25% more tradeable volume → larger position opportunities
-- Refine algorithm from Round 1 performance data before submitting
+- With extra access: 25% more tradeable volume → larger position opportunities, more fills
+- Analyze Round 1 performance data before submitting Round 2 — refine fair value estimates
 
 ## Round 3 Hints
 
