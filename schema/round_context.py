@@ -12,7 +12,7 @@ class RoundContext(BaseModel):
     competition: Literal[
         "imc_prosperity", "worldquant_iqc", "quantconnect", "custom"
     ] = "custom"
-    round_name: str
+    round_name: str = "Round 1"
 
     # Universe
     asset_classes: list[AssetClass]

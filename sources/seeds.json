@@ -1,105 +1,69 @@
 {
-  "$schema_note": "Each source lists a base_url, optional sitemap_url, include_patterns (URL substrings that qualify), and an explicit seed_urls list. The crawler fetches seed_urls directly and optionally expands via sitemap filtered by include_patterns.",
+  "$schema_note": "Seed URLs for StratEngine crawler. Sources ranked by expected strategy content quality.",
   "sources": [
     {
       "name": "QuantStart",
       "base_url": "https://www.quantstart.com",
       "sitemap_url": "https://www.quantstart.com/sitemap.xml",
-      "include_patterns": [
-        "/articles/"
-      ],
+      "include_patterns": ["/articles/"],
       "robots_url": "https://www.quantstart.com/robots.txt",
       "seed_urls": [
-        "https://www.quantstart.com/articles/",
         "https://www.quantstart.com/articles/Successful-Backtesting-of-Algorithmic-Trading-Strategies-Part-I/",
         "https://www.quantstart.com/articles/Successful-Backtesting-of-Algorithmic-Trading-Strategies-Part-II/",
         "https://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing/",
         "https://www.quantstart.com/articles/Backtesting-A-Moving-Average-Crossover-in-Python-with-pandas/",
         "https://www.quantstart.com/articles/Backtesting-An-Intraday-Mean-Reversion-Pairs-Strategy-Between-SPY-And-IWM/",
+        "https://www.quantstart.com/articles/Kalman-Filter-Based-Pairs-Trading-Strategy-In-QSTrader/",
+        "https://www.quantstart.com/articles/Hidden-Markov-Models-for-Regime-Detection-using-R/",
         "https://www.quantstart.com/articles/Beginners-Guide-to-Quantitative-Trading/",
         "https://www.quantstart.com/articles/ARIMA-GARCH-Trading-Strategy-on-the-SP500-Stock-Market-Index-Using-R/",
-        "https://www.quantstart.com/articles/Kalman-Filter-Based-Pairs-Trading-Strategy-In-QSTrader/",
-        "https://www.quantstart.com/articles/Event-Driven-Backtesting-with-Python-Part-I/",
-        "https://www.quantstart.com/articles/Event-Driven-Backtesting-with-Python-Part-II/",
-        "https://www.quantstart.com/articles/Continuous-Futures-Contracts-for-Backtesting-Purposes/",
-        "https://www.quantstart.com/articles/Monte-Carlo-Simulations-In-CUDA-Barrier-Option-Pricing/",
-        "https://www.quantstart.com/articles/Hidden-Markov-Models-for-Regime-Detection-using-R/"
+        "https://www.quantstart.com/articles/Forecasting-Financial-Time-Series-Part-1/",
+        "https://www.quantstart.com/articles/Forecasting-Financial-Time-Series-Part-2/",
+        "https://www.quantstart.com/articles/Forecasting-Financial-Time-Series-Part-3/",
+        "https://www.quantstart.com/articles/Using-Python-To-Detect-Cointegration-For-Pairs-Trading/",
+        "https://www.quantstart.com/articles/Johansen-Test-for-Cointegrating-Time-Series-Analysis-in-R/",
+        "https://www.quantstart.com/articles/Sharpe-Ratio-as-a-Risk-Measure-for-Algorithmic-Trading/",
+        "https://www.quantstart.com/articles/Kelly-Criterion-for-Money-Management/",
+        "https://www.quantstart.com/articles/How-to-Handle-Survivorship-Bias-in-Backtesting/",
+        "https://www.quantstart.com/articles/Regime-Detection-for-Algorithmic-Trading/"
       ]
     },
     {
       "name": "Backtrader",
       "base_url": "https://www.backtrader.com",
       "sitemap_url": null,
-      "include_patterns": [
-        "/docu/",
-        "/blog/"
-      ],
+      "include_patterns": ["/docu/", "/blog/"],
       "robots_url": "https://www.backtrader.com/robots.txt",
       "seed_urls": [
-        "https://www.backtrader.com/docu/",
         "https://www.backtrader.com/docu/quickstart/quickstart/",
-        "https://www.backtrader.com/docu/concepts/",
         "https://www.backtrader.com/docu/strategy/",
-        "https://www.backtrader.com/docu/signal_strategy/signal_strategy/",
-        "https://www.backtrader.com/docu/order-creation-execution/bracket/bracket/",
-        "https://www.backtrader.com/docu/order-creation-execution/oco/oco/",
         "https://www.backtrader.com/docu/sizers/sizers/",
         "https://www.backtrader.com/docu/analyzers/analyzers/",
-        "https://www.backtrader.com/docu/observers-and-statistics/observers-and-statistics/",
-        "https://www.backtrader.com/docu/indautoref/",
-        "https://www.backtrader.com/docu/commission-schemes/commission-schemes/",
-        "https://www.backtrader.com/docu/slippage/slippage/",
-        "https://www.backtrader.com/docu/broker/",
-        "https://www.backtrader.com/docu/cerebro/",
-        "https://www.backtrader.com/docu/datafeed/",
-        "https://www.backtrader.com/docu/live/live/"
+        "https://www.backtrader.com/docu/commission-schemes/commission-schemes/"
       ]
     },
     {
       "name": "QuantConnect Docs",
       "base_url": "https://www.quantconnect.com",
       "sitemap_url": null,
-      "include_patterns": [
-        "/docs/v2/",
-        "/learning/",
-        "/research/"
-      ],
+      "include_patterns": ["/docs/v2/", "/learning/"],
       "robots_url": "https://www.quantconnect.com/robots.txt",
       "seed_urls": [
-        "https://www.quantconnect.com/docs/v2/writing-algorithms",
         "https://www.quantconnect.com/docs/v2/writing-algorithms/indicators",
         "https://www.quantconnect.com/docs/v2/writing-algorithms/universes",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/portfolio",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/trading-and-orders",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/risk-management",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/transaction-fees",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/slippage",
         "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework",
         "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/alpha",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/portfolio-construction",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/execution",
-        "https://www.quantconnect.com/docs/v2/writing-algorithms/algorithm-framework/risk-management",
-        "https://www.quantconnect.com/docs/v2/research-environment",
-        "https://www.quantconnect.com/learning/",
-        "https://www.quantconnect.com/learning/course/1/Boot-Camp-101",
-        "https://www.quantconnect.com/learning/course/13/Hybrid-Active-Value-Investing"
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/risk-management",
+        "https://www.quantconnect.com/learning/course/1/Boot-Camp-101"
       ]
     },
     {
-      "name": "arXiv q-fin",
+      "name": "arXiv — Market Making",
       "base_url": "https://arxiv.org",
       "sitemap_url": null,
-      "include_patterns": [
-        "/abs/"
-      ],
+      "include_patterns": ["/abs/", "/html/"],
       "robots_url": "https://arxiv.org/robots.txt",
       "seed_urls": [
-        "https://arxiv.org/list/q-fin.TR/recent",
-        "https://arxiv.org/list/q-fin.PM/recent",
-        "https://arxiv.org/list/q-fin.ST/recent",
-        "https://arxiv.org/list/q-fin.CP/recent",
-        "https://arxiv.org/list/q-fin.RM/recent",
         "https://arxiv.org/abs/1811.06520",
         "https://arxiv.org/abs/1904.04912",
         "https://arxiv.org/abs/2011.08534",
@@ -109,34 +73,113 @@
         "https://arxiv.org/abs/1911.10107",
         "https://arxiv.org/abs/2006.04992",
         "https://arxiv.org/abs/1911.05620",
-        "https://arxiv.org/abs/2109.12620"
+        "https://arxiv.org/abs/2109.12620",
+        "https://arxiv.org/abs/2004.01887",
+        "https://arxiv.org/abs/2210.01237",
+        "https://arxiv.org/abs/1906.02312",
+        "https://arxiv.org/abs/1105.3556",
+        "https://arxiv.org/abs/1812.03955",
+        "https://arxiv.org/abs/2004.10024",
+        "https://arxiv.org/abs/1610.05868",
+        "https://arxiv.org/abs/2003.05611",
+        "https://arxiv.org/abs/1910.03743",
+        "https://arxiv.org/abs/1806.05695",
+        "https://arxiv.org/abs/2106.00123",
+        "https://arxiv.org/abs/1707.01625",
+        "https://arxiv.org/abs/2009.14071",
+        "https://arxiv.org/abs/1901.08740"
       ]
     },
     {
-      "name": "QuantConnect Forum",
-      "base_url": "https://www.quantconnect.com",
-      "sitemap_url": null,
-      "include_patterns": [
-        "/forum/discussion/"
-      ],
-      "robots_url": "https://www.quantconnect.com/robots.txt",
-      "seed_urls": [
-        "https://www.quantconnect.com/forum/",
-        "https://www.quantconnect.com/forum/category/6/strategy-development",
-        "https://www.quantconnect.com/forum/category/7/community-research"
-      ]
-    },
-    {
-      "name": "Hudson & Thames (MLFinLab blog)",
+      "name": "Hudson & Thames",
       "base_url": "https://hudsonthames.org",
       "sitemap_url": "https://hudsonthames.org/sitemap.xml",
-      "include_patterns": [
-        "/posts/",
-        "/blog/"
-      ],
+      "include_patterns": ["/posts/", "/blog/"],
       "robots_url": "https://hudsonthames.org/robots.txt",
       "seed_urls": [
         "https://hudsonthames.org/an-introduction-to-cointegration/"
+      ]
+    },
+    {
+      "name": "Quantpedia",
+      "base_url": "https://quantpedia.com",
+      "sitemap_url": "https://quantpedia.com/sitemap.xml",
+      "include_patterns": ["/strategies/", "/blog/"],
+      "robots_url": "https://quantpedia.com/robots.txt",
+      "seed_urls": [
+        "https://quantpedia.com/strategies/momentum-effect-in-stocks/",
+        "https://quantpedia.com/strategies/short-term-reversal-effect-in-stocks/",
+        "https://quantpedia.com/strategies/pairs-trading-with-stocks/",
+        "https://quantpedia.com/strategies/volatility-risk-premium-effect/",
+        "https://quantpedia.com/strategies/low-volatility-factor-in-stocks/",
+        "https://quantpedia.com/strategies/earnings-quality-factor/",
+        "https://quantpedia.com/strategies/market-making-via-reinforcement-learning/",
+        "https://quantpedia.com/strategies/intraday-momentum/",
+        "https://quantpedia.com/strategies/mean-reversion-in-option-implied-volatility/",
+        "https://quantpedia.com/strategies/kalman-filter-for-pairs-trading/"
+      ]
+    },
+    {
+      "name": "GitHub — IMC Prosperity Solutions",
+      "base_url": "https://raw.githubusercontent.com",
+      "sitemap_url": null,
+      "include_patterns": [],
+      "robots_url": null,
+      "seed_urls": [
+        "https://raw.githubusercontent.com/jmerle/imc-prosperity-3-backtester/main/README.md",
+        "https://raw.githubusercontent.com/n-destin/IMC-Prosperity-2/main/trader.py",
+        "https://raw.githubusercontent.com/terryluzijian/imc-prosperity-3/main/README.md",
+        "https://raw.githubusercontent.com/picktim/imc-prosperity/main/README.md"
+      ]
+    },
+    {
+      "name": "arXiv HTML — Avellaneda Stoikov",
+      "base_url": "https://arxiv.org",
+      "sitemap_url": null,
+      "include_patterns": ["/html/"],
+      "robots_url": "https://arxiv.org/robots.txt",
+      "seed_urls": [
+        "https://arxiv.org/html/2105.13103",
+        "https://arxiv.org/html/2302.06226",
+        "https://arxiv.org/html/1910.03743",
+        "https://arxiv.org/html/2206.14498",
+        "https://arxiv.org/html/2107.14140"
+      ]
+    },
+    {
+      "name": "QuantLib / OpenQuant Docs",
+      "base_url": "https://quant.stackexchange.com",
+      "sitemap_url": null,
+      "include_patterns": ["/questions/"],
+      "robots_url": "https://quant.stackexchange.com/robots.txt",
+      "seed_urls": [
+        "https://quant.stackexchange.com/questions/36611/market-making-strategy-avellaneda-stoikov",
+        "https://quant.stackexchange.com/questions/18539/simple-market-making-strategy",
+        "https://quant.stackexchange.com/questions/1862/what-is-a-good-market-making-strategy",
+        "https://quant.stackexchange.com/questions/6832/pairs-trading-with-kalman-filter",
+        "https://quant.stackexchange.com/questions/7718/how-to-use-hurst-exponent-in-trading",
+        "https://quant.stackexchange.com/questions/74/what-is-the-kelly-criterion",
+        "https://quant.stackexchange.com/questions/29026/how-do-i-detect-regime-changes",
+        "https://quant.stackexchange.com/questions/3610/momentum-alpha-signal-in-algorithmic-trading",
+        "https://quant.stackexchange.com/questions/9269/mean-reversion-strategy-for-pairs-trading",
+        "https://quant.stackexchange.com/questions/38862/how-to-handle-inventory-risk-in-market-making"
+      ]
+    },
+    {
+      "name": "Investopedia — Quant Strategies",
+      "base_url": "https://www.investopedia.com",
+      "sitemap_url": null,
+      "include_patterns": ["/articles/", "/terms/"],
+      "robots_url": "https://www.investopedia.com/robots.txt",
+      "seed_urls": [
+        "https://www.investopedia.com/articles/trading/04/011404.asp",
+        "https://www.investopedia.com/articles/active-trading/091114/high-frequency-trading-how-its-done.asp",
+        "https://www.investopedia.com/articles/trading/07/statarb.asp",
+        "https://www.investopedia.com/terms/k/kellycriterion.asp",
+        "https://www.investopedia.com/terms/m/marketmaker.asp",
+        "https://www.investopedia.com/terms/b/bollingerbands.asp",
+        "https://www.investopedia.com/articles/trading/05/011705.asp",
+        "https://www.investopedia.com/terms/m/meanreversion.asp"
       ]
     }
   ]

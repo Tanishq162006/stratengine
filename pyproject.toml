@@ -47,6 +47,7 @@ Issues = "https://github.com/Tanishq162006/stratengine/issues"
 [tool.setuptools]
 py-modules = [
     "config",
+    "context_builder",
     "crawler",
     "cleaner",
     "extractor",
@@ -54,7 +55,9 @@ py-modules = [
     "retriever",
     "generator",
     "evaluator",
+    "knowledge_loader",
     "playbook_generator",
+    "price_fetcher",
     "decision_scorer",
     "manual_critic",
     "source_quality",
@@ -76,7 +79,7 @@ py-modules = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["schema*"]
+include = ["schema*", "competitions*"]
 exclude = ["tests*", "data*", "memory*"]
 
 [tool.setuptools.package-data]

@@ -64,7 +64,8 @@ def extract_card(article_text: str, source_name: str, url: str) -> StrategyCard 
         console.log(f"[yellow]skip[/] {url}: {data.get('reason')}")
         prompt_logger.finalize(log_id, "failure", notes=f"skip: {data.get('reason')}")
         return None
-    data.setdefault("card_id", _stable_card_id(url, data.get("title", "untitled")))
+    # Always use deterministic ID — never trust LLM-generated placeholders
+    data["card_id"] = _stable_card_id(url, data.get("title", "untitled"))
     data.setdefault("url", url)
     data.setdefault("source", source_name)
     card = StrategyCard.model_validate(data)

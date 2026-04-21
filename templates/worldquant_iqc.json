@@ -1,6 +1,6 @@
 {
   "name": "worldquant_iqc",
-  "description": "WorldQuant International Quant Championship. Alpha expressions evaluated on WQ BRAIN.",
+  "description": "WorldQuant International Quant Championship. Alpha expressions evaluated on WQ BRAIN across regions / universes.",
   "round_context_defaults": {
     "competition": "worldquant_iqc",
     "asset_classes": ["equity"],
@@ -14,24 +14,62 @@
     "objective": "sharpe",
     "preferred_strategy_families": ["factor", "mean_reversion", "momentum", "ml_predictive"]
   },
-  "code_skeleton": "# WQ BRAIN alpha expression (pseudocode; real submission is in the BRAIN IDE).\\n# Example: rank(-delta(close, 5)) -> mean-reversion factor over 5-day change.\\n\\nalpha = rank(-ts_mean(returns, 10))\\n",
+  "brain_operator_cheatsheet": {
+    "cross_sectional": [
+      "rank(x) — cross-sectional rank [0,1]",
+      "zscore(x) — cross-sectional zscore",
+      "scale(x) — rescale so sum(|x|) == 1",
+      "neutralize(x, group) — subtract group mean (e.g. industry, sector)",
+      "power(x, n), signed_power(x, n) — non-linear transforms",
+      "winsorize(x, std=4) — clip outliers"
+    ],
+    "time_series": [
+      "ts_mean(x, d) — rolling mean over d days",
+      "ts_std_dev(x, d) — rolling std",
+      "ts_rank(x, d) — rolling rank",
+      "ts_arg_max(x, d), ts_arg_min(x, d) — bar offset of extreme in window",
+      "ts_corr(x, y, d), ts_covariance(x, y, d) — rolling pairwise",
+      "ts_regression(y, x, d) — rolling beta",
+      "ts_decay_linear(x, d) — linearly weighted average (most recent heavier)",
+      "delta(x, d) — x - ts_delay(x, d)",
+      "ts_delay(x, d) — lag",
+      "ts_backfill(x, d) — forward-fill nulls"
+    ],
+    "risk_transforms": [
+      "divide by ts_std_dev(returns, d) to target volatility",
+      "neutralize by ts_mean across universe to remove market beta",
+      "group_neutralize by Industry or SubIndustry to remove sector beta"
+    ],
+    "common_fields": [
+      "close, open, high, low, volume, vwap",
+      "returns — daily total return",
+      "cap — market cap",
+      "fundamental N (fnd) — a wide range of accounting items; e.g. fnd13 is book value"
+    ]
+  },
+  "code_skeleton": "# WQ BRAIN alpha expression. Paste into the BRAIN IDE.\n# Target: cross-sectional, vol-targeted, sector-neutralized.\n\n# Example: short-term reversal on liquid names\nreturns_5d = ts_mean(returns, 5)\nalpha = -rank(returns_5d)\nalpha = group_neutralize(alpha, subindustry)\nalpha = scale(alpha)\n\n# Alternate: momentum-with-low-vol bias\n# mom = ts_mean(returns, 63) - ts_mean(returns, 5)   # 3mo - 1wk\n# stability = 1 / (ts_std_dev(returns, 20) + 0.0001)\n# alpha = rank(mom) * rank(stability)\n# alpha = group_neutralize(alpha, industry)\n",
   "anti_patterns": [
-    "Using look-ahead operators (future prices, future fundamentals).",
-    "Dividing by a value that can be zero (avoid implicit NaN/Inf).",
+    "Using look-ahead operators (accessing future prices, future fundamentals, future reports).",
+    "Dividing by a value that can be zero without a constant — produces NaN/Inf that BRAIN rejects.",
     "Over-fit IS Sharpe that collapses OOS: IQC rewards universality, not a single period.",
-    "Ignoring neutralization: raw returns without sector/market neutralization typically underperform.",
-    "Submitting alphas with < 65% turnover — BRAIN filters these as inactive."
+    "Ignoring neutralization: raw-scale signals without sector/market neutralization are usually rejected on the universality check.",
+    "Turnover below 3% or above 60% gets flagged inactive / excessive.",
+    "Max weight per stock breach — scale/rank and cap with the appropriate operator.",
+    "Signals that rely on a single fundamental that is sparse across universe."
   ],
   "submission_requirements": [
-    "Alpha expression using BRAIN operators only.",
-    "Positive OOS Sharpe, OOS IR, passes universality + weight checks.",
-    "Turnover within bracket (typically 3%-60%).",
-    "Max weight per stock respected."
+    "Alpha expression in the BRAIN DSL (operators + fields above).",
+    "Positive OOS Sharpe, positive OOS IR.",
+    "Passes universality, weight, and turnover checks.",
+    "Neutralized by SubIndustry (or Industry) unless the signal is market-breadth.",
+    "Typically one-line or few-line expression — excess complexity is penalized."
   ],
   "past_round_notes": [
-    "Cross-sectional rank operators (rank, ts_rank) generalize better than raw-scale signals.",
-    "Volatility-targeted signals (signal / std) produce steadier Sharpes.",
-    "Combining two weakly-correlated alphas via rank-averaging often beats either alone."
+    "Rank-of-rolling-mean beats raw rolling mean 9 times out of 10 because cross-sectional rank is universality-friendly.",
+    "Volatility-scaled signals (alpha / ts_std_dev(returns, 20)) produce steadier Sharpes across regimes.",
+    "Combining two weakly-correlated alphas via rank-averaging usually beats either alone.",
+    "Industry neutralization is almost always additive; market-cap neutralization helps when signal is cap-biased.",
+    "Short-term reversal (negative rank of 5-day return) is the classic starter — still works in most regions."
   ],
-  "prompt_addendum": "Context: WorldQuant IQC. Output an alpha expression using the WQ BRAIN operator set (rank, ts_mean, delta, ts_std, scale, sign, signed_power, ...). Do NOT output a Backtrader script. Optimize for OOS Sharpe, not IS."
+  "prompt_addendum": "Context: WorldQuant IQC on the BRAIN platform. Output an alpha expression using ONLY the BRAIN operators and fields listed in the template. DO NOT output a Backtrader script. DO NOT print STRATENGINE_STATS. Prefer rank/zscore/scale transforms, always vol-target, always group-neutralize by subindustry (or industry if subindustry unavailable). Optimize for OOS Sharpe and universality across regions, not IS. Keep the expression concise — BRAIN penalizes complexity."
 }

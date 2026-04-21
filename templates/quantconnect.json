@@ -1,6 +1,6 @@
 {
   "name": "quantconnect",
-  "description": "QuantConnect LEAN algorithms. Python class inheriting QCAlgorithm.",
+  "description": "QuantConnect LEAN algorithms. Python class inheriting QCAlgorithm. Free backtesting on QC cloud, live deploy via subscription.",
   "round_context_defaults": {
     "competition": "quantconnect",
     "asset_classes": ["equity"],
@@ -14,24 +14,67 @@
     "objective": "sharpe",
     "preferred_strategy_families": ["momentum", "mean_reversion", "factor", "trend_following"]
   },
-  "code_skeleton": "from AlgorithmImports import *\\n\\nclass StrategyAlgorithm(QCAlgorithm):\\n    def Initialize(self):\\n        self.SetStartDate(2018, 1, 1)\\n        self.SetEndDate(2023, 12, 31)\\n        self.SetCash(100000)\\n        self.symbol = self.AddEquity(\\\"SPY\\\", Resolution.Daily).Symbol\\n        # TODO: indicators / universe\\n\\n    def OnData(self, data: Slice):\\n        if not self.Portfolio.Invested:\\n            self.SetHoldings(self.symbol, 1)\\n",
+  "api_cheatsheet": {
+    "initialize": [
+      "self.SetStartDate / SetEndDate / SetCash",
+      "self.AddEquity(ticker, Resolution.Daily|Minute|Second|Hour|Tick)",
+      "self.AddForex(pair) / AddCrypto(pair) / AddFuture(ticker) / AddOption(underlying)",
+      "self.AddUniverse(coarse_selection_func) for dynamic universes",
+      "self.SetWarmUp(period_or_timedelta) — critical for indicator-based strategies",
+      "self.SetBenchmark(symbol_or_string) for comparison",
+      "self.SetBrokerageModel(BrokerageName.InteractiveBrokersBrokerage, AccountType.Margin)"
+    ],
+    "indicators": [
+      "self.SMA(symbol, period, Resolution.Daily)",
+      "self.RSI(symbol, period)",
+      "self.ATR(symbol, period)",
+      "self.BB(symbol, period, k) -> Bollinger Bands",
+      "self.MACD(symbol, fast, slow, signal)",
+      "indicator.IsReady — gate on this, never use IsReady==False values"
+    ],
+    "ordering": [
+      "self.SetHoldings(symbol, weight) — target portfolio weight, auto-calculates order size",
+      "self.MarketOrder(symbol, qty) / self.LimitOrder(symbol, qty, limit)",
+      "self.StopMarketOrder(symbol, qty, stop) / self.StopLimitOrder",
+      "self.Liquidate(symbol) — flatten a position",
+      "self.Portfolio[symbol].Invested / Quantity / UnrealizedProfitPercent"
+    ],
+    "scheduling": [
+      "self.Schedule.On(self.DateRules.EveryDay(), self.TimeRules.AfterMarketOpen(symbol, minutes), callback)",
+      "DateRules.WeekStart / MonthStart / MonthEnd for periodic rebalancing",
+      "TimeRules.Every(TimeSpan.FromMinutes(n)) for intraday cadence"
+    ],
+    "framework_style": [
+      "Alpha model emits Insight(symbol, direction, magnitude, period).",
+      "PortfolioConstructionModel converts insights to targets.",
+      "RiskManagementModel can override targets (e.g. drawdown halt).",
+      "ExecutionModel fills targets (e.g. ImmediateExecutionModel, VolumeWeightedAveragePriceExecutionModel)."
+    ]
+  },
+  "code_skeleton": "from AlgorithmImports import *\n\nclass StrategyAlgorithm(QCAlgorithm):\n    def Initialize(self):\n        self.SetStartDate(2018, 1, 1)\n        self.SetEndDate(2023, 12, 31)\n        self.SetCash(100000)\n        self.SetBrokerageModel(BrokerageName.InteractiveBrokersBrokerage, AccountType.Margin)\n\n        self.spy = self.AddEquity('SPY', Resolution.Daily).Symbol\n        self.sma_fast = self.SMA(self.spy, 20, Resolution.Daily)\n        self.sma_slow = self.SMA(self.spy, 100, Resolution.Daily)\n        self.SetWarmUp(100)\n\n        self.Schedule.On(self.DateRules.EveryDay(self.spy),\n                         self.TimeRules.AfterMarketOpen(self.spy, 15),\n                         self.Rebalance)\n\n    def Rebalance(self):\n        if self.IsWarmingUp or not self.sma_fast.IsReady or not self.sma_slow.IsReady:\n            return\n        long_signal = self.sma_fast.Current.Value > self.sma_slow.Current.Value\n        target = 1.0 if long_signal else 0.0\n        self.SetHoldings(self.spy, target)\n\n    def OnData(self, data: Slice):\n        pass\n",
   "anti_patterns": [
-    "Forgetting to call SetWarmUp for indicators (first bars produce NaN signals).",
-    "Universe selection inside OnData (should be in CoarseSelectionFunction).",
-    "Calling History() every bar — latency balloon.",
-    "Using datetime.now() — LEAN replays; use self.Time.",
-    "Market orders at close without time-in-force awareness."
+    "Forgetting SetWarmUp — first bars feed garbage to indicators, trades fire on noise.",
+    "Universe selection inside OnData instead of CoarseSelectionFunction — latency balloon.",
+    "Calling History() every bar to refetch data — slow; cache via indicators or rolling windows.",
+    "Using datetime.now() — LEAN replays historical time, must use self.Time.",
+    "Market-on-close orders without time-in-force awareness — they may not fill at expected prices.",
+    "Hard-coding a single symbol for a framework that was designed to scale — use universes.",
+    "Ignoring reality modeling — LEAN has realistic slippage/fees by default; don't override without reason.",
+    "Rolling your own order sizing when SetHoldings() handles it correctly."
   ],
   "submission_requirements": [
-    "Class inherits QCAlgorithm.",
-    "Initialize() sets start/end/cash.",
-    "OnData(Slice) implemented.",
-    "Uses AddEquity/AddFuture/etc, not ad-hoc data fetching."
+    "Class must inherit QCAlgorithm.",
+    "Initialize() sets start/end/cash and registers securities.",
+    "OnData(Slice) or scheduled callbacks handle trading logic.",
+    "Import only via `from AlgorithmImports import *` (not ad-hoc pip installs).",
+    "All data fetched via self.AddEquity/AddFuture/etc — no urllib/requests."
   ],
   "past_round_notes": [
-    "Pure trend-following on SPY + bonds beats most sophisticated ideas on risk-adjusted metrics.",
-    "Intraday strategies often fail due to ignored liquidity/slippage.",
-    "Framework-based algorithms (Alpha + PortfolioConstruction + Risk + Execution) usually outperform monolithic OnData implementations."
+    "Pure trend-following on SPY + long-duration bonds (TLT) via SMA crossover beats most sophisticated ideas on risk-adjusted metrics over 10+ year backtests.",
+    "Intraday strategies often fail due to ignored liquidity / reality modeling — fees eat intraday edges.",
+    "Framework-based algorithms (Alpha + PortfolioConstruction + Risk + Execution) usually outperform monolithic OnData implementations at scale.",
+    "Universe rotation (top-N by momentum, rebalanced monthly) is a durable baseline.",
+    "Risk overlays (halt new positions if rolling 30d DD > 5%) improve Sortino significantly."
   ],
-  "prompt_addendum": "Context: QuantConnect LEAN. Output a Python algorithm subclassing QCAlgorithm with Initialize() and OnData(). Use AlgorithmImports. Do NOT print STRATENGINE_STATS or use Backtrader."
+  "prompt_addendum": "Context: QuantConnect LEAN. Output a Python algorithm subclassing QCAlgorithm with Initialize() and OnData() (or scheduled callbacks). Always use `from AlgorithmImports import *`. Always call SetWarmUp and gate on indicator.IsReady. Prefer SetHoldings for portfolio targets. DO NOT use Backtrader. DO NOT print STRATENGINE_STATS. DO NOT make network calls. For multi-asset, use universes (CoarseSelectionFunction), not hard-coded ticker lists."
 }

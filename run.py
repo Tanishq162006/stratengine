@@ -33,6 +33,7 @@ import source_discoverer
 import source_quality as sq_mod
 from source_refresher import refresh_all
 from template_loader import load_template, merge_defaults, prompt_addendum
+from knowledge_loader import build_prefix
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 console = Console()
@@ -134,17 +135,21 @@ def round(
     """Retrieve + generate + evaluate for a single round."""
     ensure_dirs()
     raw = json.loads(context.read_text())
+    prefix: str | None = None
     if template:
         tpl = load_template(template)
         raw = merge_defaults(raw, tpl)
-        console.print(f"[cyan]template {template}:[/] {prompt_addendum(tpl)[:120]}...")
+        addendum = prompt_addendum(tpl)
+        console.print(f"[cyan]template {template}:[/] {addendum[:120]}...")
+        knowledge_prefix = build_prefix(template, addendum)
+        prefix = knowledge_prefix if knowledge_prefix.strip() else None
     round_id = f"{int(time.time())}"
 
     if mode == "algo":
         ctx = RoundContext.model_validate(raw)
         cards = retrieve(ctx, top_k=top_k)
         console.print(f"[bold]Retrieved {len(cards)} cards[/]")
-        result = generate(ctx, cards)
+        result = generate(ctx, cards, prefix=prefix)
 
         (CANDIDATES_DIR / f"{round_id}_candidates.json").write_text(
             json.dumps(
@@ -199,7 +204,7 @@ def round(
     elif mode == "manual":
         tctx = TradingContext.model_validate(raw)
         cards = retrieve(tctx, top_k=top_k)
-        gen = generate_playbooks(tctx, cards)
+        gen = generate_playbooks(tctx, cards, prefix=prefix)
         playbooks = gen["playbooks"]
         if not playbooks:
             raise typer.BadParameter("Generator produced no valid playbooks.")
@@ -427,6 +432,190 @@ def retrieve_cmd(
         console.print(
             f"[cyan]{c.card_id}[/] {c.title} — {c.strategy_family.value}/{c.timeframe.value}"
         )
+
+
+@app.command("bootstrap")
+def bootstrap_cmd(
+    seeds: Path = typer.Option(Path("sources/seeds.json"), help="Seeds file."),
+    skip_crawl: bool = typer.Option(False, help="Skip crawl (use existing raw HTML)."),
+    skip_prices: bool = typer.Option(False, help="Skip fetching default price data."),
+    prices: str = typer.Option(
+        "SPY,QQQ,TLT,GLD,IWM",
+        help="Comma-separated tickers to pre-fetch for scenario scoring.",
+    ),
+) -> None:
+    """First-run setup: crawl → clean → extract → index + fetch default prices.
+
+    Run this once after cloning the repo to build the strategy card database.
+    """
+    ensure_dirs()
+
+    if not skip_crawl:
+        console.rule("[bold]Step 1/4 — Crawl[/]")
+        fetched = asyncio.run(crawler_mod.crawl(seeds))
+        console.print(f"  Crawled {len(fetched)} pages")
+
+    console.rule("[bold]Step 2/4 — Clean[/]")
+    cleaned = cleaner_mod.clean_all()
+    console.print(f"  Cleaned {len(cleaned)} articles")
+
+    console.rule("[bold]Step 3/4 — Extract strategy cards[/]")
+    extracted = extractor_mod.extract_all()
+    console.print(f"  Extracted {len(extracted)} cards")
+
+    console.rule("[bold]Step 4/4 — Index[/]")
+    indexed = indexer_mod.index_all()
+    console.print(f"  Indexed {indexed} cards into ChromaDB + SQLite")
+
+    if not skip_prices:
+        console.rule("[bold]Bonus — Fetch price data[/]")
+        import price_fetcher as pf
+        sym_list = [s.strip().upper() for s in prices.split(",") if s.strip()]
+        results = pf.fetch_many(sym_list, start="2015-01-01")
+        for sym, rows in results.items():
+            status = f"{len(rows)} rows" if rows else "[red]FAILED[/]"
+            console.print(f"  {sym}: {status}")
+
+    console.print("\n[bold green]Bootstrap complete.[/] Run `stratengine dashboard` to inspect.")
+
+
+@app.command("fetch-prices")
+def fetch_prices_cmd(
+    symbols: str = typer.Argument(..., help="Comma-separated tickers, e.g. SPY,QQQ,TLT"),
+    start: str = typer.Option("2015-01-01", help="Start date YYYY-MM-DD"),
+    end: Optional[str] = typer.Option(None, help="End date YYYY-MM-DD (default: today)"),
+) -> None:
+    """Download free daily OHLCV from Stooq and save to data/prices/."""
+    import price_fetcher
+
+    sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    results = price_fetcher.fetch_many(sym_list, start=start, end=end)
+    for sym, rows in results.items():
+        status = f"{len(rows)} rows" if rows else "[red]FAILED[/]"
+        console.print(f"  {sym}: {status}")
+
+
+@app.command("play")
+def play_cmd(
+    prompt: str = typer.Option(..., help="Natural-language strategy prompt."),
+    template: Optional[str] = typer.Option(
+        None, help="Competition template: imc_prosperity | worldquant_iqc | quantconnect."
+    ),
+    mode: Optional[str] = typer.Option(
+        None, help="'algo' or 'manual'. Auto-detected from prompt if omitted."
+    ),
+    top_k: int = typer.Option(10, help="Cards to retrieve."),
+    data: Optional[Path] = typer.Option(None, help="Price CSV for algo-mode backtests."),
+    prices_dir: Optional[Path] = typer.Option(None, help="Dir of per-symbol OHLC CSVs."),
+    skip_scenarios: bool = typer.Option(False, help="Skip historical scenario scoring."),
+) -> None:
+    """Zero-touch: natural-language prompt → full round report.
+
+    Example:
+        stratengine play --prompt "IMC Round 3, KELP market making, position limit 50" --template imc_prosperity
+    """
+    ensure_dirs()
+    from context_builder import build_context
+
+    console.print(f"[bold cyan]Building context from prompt...[/]")
+    detected_mode, ctx = build_context(prompt, template_name=template)
+    resolved_mode = mode or detected_mode
+    console.print(f"[cyan]Mode:[/] {resolved_mode}  [cyan]Context:[/] {type(ctx).__name__}")
+
+    # Build prefix from template knowledge (same logic as round_cmd)
+    prefix: str | None = None
+    if template:
+        from template_loader import load_template, merge_defaults
+        from knowledge_loader import build_prefix
+        tpl = load_template(template)
+        addendum = prompt_addendum(tpl)
+        knowledge_prefix = build_prefix(template, addendum)
+        prefix = knowledge_prefix if knowledge_prefix.strip() else None
+
+    round_id = f"{int(time.time())}"
+
+    if resolved_mode == "algo":
+        from schema import RoundContext as RC
+        if not isinstance(ctx, RC):
+            raise typer.BadParameter("Context parsed as manual but mode is algo.")
+
+        cards = retrieve(ctx, top_k=top_k)
+        console.print(f"[bold]Retrieved {len(cards)} cards[/]")
+        result = generate(ctx, cards, prefix=prefix)
+
+        (CANDIDATES_DIR / f"{round_id}_candidates.json").write_text(
+            json.dumps(
+                {
+                    "round_id": round_id,
+                    "prompt": prompt,
+                    "template": template,
+                    "round_context": ctx.model_dump(mode="json"),
+                    "synthesis": result["synthesis"],
+                    "candidates": [{"candidate": c["candidate"]} for c in result["candidates"]],
+                },
+                indent=2,
+            )
+        )
+        for i, item in enumerate(result["candidates"]):
+            (CANDIDATES_DIR / f"{round_id}_cand_{i:02d}.py").write_text(item["code"])
+
+        if data is None:
+            console.print(
+                f"[green]Done.[/] {len(result['candidates'])} candidates in memory/candidates/ "
+                f"(pass --data CSV to also evaluate)."
+            )
+            return
+
+        results = []
+        for item in result["candidates"]:
+            br = evaluate(item["candidate"], item["code"], ctx, data)
+            results.append(br)
+        ranked_results = rank(results)
+
+        table = Table(title="Algo candidates")
+        table.add_column("Rank"); table.add_column("Candidate")
+        table.add_column("Score"); table.add_column("Sharpe"); table.add_column("MaxDD")
+        for i, r in enumerate(ranked_results):
+            table.add_row(
+                str(i + 1), r.candidate_name, f"{r.score:.3f}",
+                f"{r.stats.get('sharpe', 0):.3f}" if r.stats else "-",
+                f"{r.stats.get('max_drawdown', 0):.3f}" if r.stats else "-",
+            )
+        console.print(table)
+
+        out_path = RESULTS_DIR / f"{round_id}_results.json"
+        out_path.write_text(json.dumps([asdict(r) for r in ranked_results], indent=2, default=str))
+        console.print(f"[green]Report:[/] {out_path}")
+
+    elif resolved_mode == "manual":
+        from schema import TradingContext as TC
+        if not isinstance(ctx, TC):
+            raise typer.BadParameter("Context parsed as algo but mode is manual.")
+
+        cards = retrieve(ctx, top_k=top_k)
+        gen = generate_playbooks(ctx, cards, prefix=prefix)
+        playbooks = gen["playbooks"]
+        if not playbooks:
+            raise typer.BadParameter("Generator produced no valid playbooks.")
+
+        reviews = critique_playbooks(ctx, playbooks).get("reviews", [])
+        with_critique = attach_critiques(playbooks, reviews)
+        kept = filter_by_verdict(with_critique, drop_rejected=True)
+
+        scored: list[dict] = []
+        for pb in kept:
+            ps = score_playbook(pb, data_dir=prices_dir or Path("data/prices"), skip_scenarios=skip_scenarios)
+            scored.append({"playbook": pb, "score": asdict(ps)})
+        scored.sort(key=lambda x: x["score"]["composite"], reverse=True)
+
+        out_path = ROUNDS_DIR / f"{round_id}_playbook.json"
+        out_path.write_text(
+            json.dumps({"round_id": round_id, "prompt": prompt, "playbooks": scored}, indent=2)
+        )
+        console.print(f"[green]Report:[/] {out_path}  ({len(scored)} playbooks ranked)")
+
+    else:
+        raise typer.BadParameter("mode must be 'algo' or 'manual'")
 
 
 if __name__ == "__main__":

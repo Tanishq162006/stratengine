@@ -46,14 +46,25 @@ def _validate_playbook(pb: dict) -> list[str]:
     return missing
 
 
-def generate_playbooks(ctx: TradingContext, cards: list[StrategyCard]) -> dict:
-    """Return {playbooks: [...], warnings: [...]}."""
+def generate_playbooks(
+    ctx: TradingContext,
+    cards: list[StrategyCard],
+    *,
+    prefix: str | None = None,
+) -> dict:
+    """Return {playbooks: [...], warnings: [...]}. `prefix` prepends context
+    (e.g. trader's firm mandate, asset universe notes) to the LLM call."""
     s = load_settings()
     tpl = (PROMPTS_DIR / "playbook.txt").read_text(encoding="utf-8")
-    prompt = _render(
+    base_prompt = _render(
         tpl,
         trading_context_json=ctx.model_dump_json(indent=2),
         cards_json=json.dumps([json.loads(c.model_dump_json()) for c in cards], indent=2),
+    )
+    prompt = (
+        f"CONTEXT (read first):\n{prefix.strip()}\n\n---\n\n{base_prompt}"
+        if prefix
+        else base_prompt
     )
     log_id = prompt_logger.log_call(
         "playbook.txt",

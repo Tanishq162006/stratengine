@@ -1,38 +1,117 @@
 {
   "name": "imc_prosperity",
-  "description": "IMC Prosperity competition (discrete rounds, per-product strategies on a shared simulator).",
+  "description": "IMC Prosperity 4 — 5 rounds of algorithmic + manual trading. Currency: XIRECs. Products introduced each round with independent position limits.",
   "round_context_defaults": {
     "competition": "imc_prosperity",
     "asset_classes": ["multi_asset"],
     "timeframe": "1m",
-    "backtest_start": "2024-01-01",
-    "backtest_end": "2024-01-10",
-    "starting_capital": 100000.0,
+    "backtest_start": "2026-04-14",
+    "backtest_end": "2026-04-17",
+    "starting_capital": 0.0,
     "max_leverage": 1.0,
     "transaction_cost_bps": 0.0,
     "slippage_bps": 0.0,
     "max_drawdown": null,
     "objective": "total_return",
-    "preferred_strategy_families": ["market_making", "mean_reversion", "arbitrage", "momentum"]
+    "preferred_strategy_families": ["market_making", "mean_reversion", "arbitrage", "pairs_stat_arb"]
   },
-  "code_skeleton": "from datamodel import OrderDepth, TradingState, Order\\nfrom typing import List\\n\\nclass Trader:\\n    def run(self, state: TradingState):\\n        result = {}\\n        for product, depth in state.order_depths.items():\\n            orders: List[Order] = []\\n            # TODO: strategy logic per product\\n            result[product] = orders\\n        traderData = \\\"\\\"\\n        conversions = 0\\n        return result, conversions, traderData\\n",
+  "round_schedule": {
+    "round_1": {"start": "2026-04-14T12:00CEST", "end": "2026-04-17T12:00CEST"},
+    "round_2": {"start": "2026-04-17T12:00CEST", "end": "2026-04-20T12:00CEST"},
+    "intermission": {"start": "2026-04-20T12:00CEST", "end": "2026-04-24T12:00CEST"},
+    "round_3": {"start": "2026-04-24T12:00CEST", "end": "2026-04-26T12:00CEST"},
+    "round_4": {"start": "2026-04-26T12:00CEST", "end": "2026-04-28T12:00CEST"},
+    "round_5": {"start": "2026-04-28T12:00CEST", "end": "2026-04-30T12:00CEST"}
+  },
+  "product_knowledge": {
+    "EMERALDS": {
+      "round": "tutorial",
+      "type": "stable_value",
+      "position_limit": 80,
+      "notes": "Precious gemstones with stable value. Tutorial product. Classic market-making target: quote tight around fair value, skew by inventory."
+    },
+    "TOMATOES": {
+      "round": "tutorial",
+      "type": "drifting",
+      "position_limit": 80,
+      "notes": "Tutorial product. Value fluctuates over time — use rolling mid or EMA as fair-value estimator."
+    },
+    "INTARIAN_PEPPER_ROOT": {
+      "round": "1+2",
+      "type": "stable_value",
+      "position_limit": 80,
+      "notes": "Hardy, slow-growing root with steady value. Treat like AMETHYSTS from prior years — hard-coded fair value MM with inventory skew. Position limit 80."
+    },
+    "ASH_COATED_OSMIUM": {
+      "round": "1+2",
+      "type": "volatile_patterned",
+      "position_limit": 80,
+      "notes": "Appears unpredictable but 'may follow a hidden pattern'. Investigate: mean-reversion, regime detection, Bollinger-style entries. Do NOT pure MM in large moves. Position limit 80."
+    }
+  },
+  "simulation_specs": {
+    "iterations_testing": 1000,
+    "iterations_final": 10000,
+    "tick_timeout_ms": 900,
+    "traderData_max_chars": 50000,
+    "currency": "XIRECs",
+    "state_is_stateless": true,
+    "notes": "AWS Lambda — class-level variables do NOT persist between ticks. Only traderData string persists. Use jsonpickle to serialize state."
+  },
+  "round_2_mechanics": {
+    "market_access_fee": {
+      "description": "bid() method returns an integer bid. Top 50% of bids across all teams get 25% extra order book volume. Fee is deducted from Round 2 PnL.",
+      "formula": "PnL = round2_profit - bid (if accepted) | PnL = round2_profit (if rejected)",
+      "accepted_condition": "bid > median of all bids",
+      "extra_volume": "25% more quotes inserted naturally into distribution",
+      "strategy": "Bid slightly above expected median. Extremely high bid guarantees access but sacrifices PnL. Negative bids treated as 0.",
+      "testing_note": "During testing, you see 80% of quotes (slightly randomized). bid() is ignored during testing."
+    },
+    "manual_invest_expand": {
+      "description": "Allocate 50,000 XIRECs budget across Research, Scale, Speed (0-100% each, total <=100%).",
+      "formula": "PnL = (Research * Scale * Speed) - Budget_Used",
+      "research": "research(x) = 200000 * ln(1+x) / ln(101). Logarithmic. Max 200000 at x=100.",
+      "scale": "Linear 0 to 7. scale(x) = 7 * x / 100.",
+      "speed": "Rank-based across all players. Highest=0.9, Lowest=0.1, linear between ranks. Equal investments share same rank.",
+      "strategy": "Research is logarithmic so invest heavily early. Speed is competitive — must estimate median opponent speed spend."
+    }
+  },
+  "manual_round_1": {
+    "auction_products": ["DRYLAND_FLAX", "EMBER_MUSHROOM"],
+    "rules": "Submit single limit order (price, qty). Exchange picks clearing price maximizing volume (tie: higher price). You are LAST to submit.",
+    "buyback": {
+      "DRYLAND_FLAX": {"price": 30, "fee": 0},
+      "EMBER_MUSHROOM": {"price": 20, "fee": 0.10}
+    },
+    "strategy": "Bid at or below buyback price. For DRYLAND_FLAX bid 30 (max profit, no fee). For EMBER_MUSHROOM bid at 20-fee=19.90 effective. Optimize clearing price vs quantity trade-off."
+  },
+  "code_skeleton": "from datamodel import OrderDepth, TradingState, Order\nfrom typing import Dict, List\nimport json\n\nclass Trader:\n    POSITION_LIMITS = {\n        'INTARIAN_PEPPER_ROOT': 80,\n        'ASH_COATED_OSMIUM': 80,\n        'EMERALDS': 80,\n        'TOMATOES': 80,\n    }\n\n    def bid(self):\n        \"\"\"Round 2 only: bid for extra market access. Ignored all other rounds.\"\"\"\n        return 0  # TODO: set strategic bid\n\n    def run(self, state: TradingState):\n        # Rehydrate state from traderData\n        try:\n            trader_state = json.loads(state.traderData) if state.traderData else {}\n        except Exception:\n            trader_state = {}\n\n        result: Dict[str, List[Order]] = {}\n\n        for product, depth in state.order_depths.items():\n            orders: List[Order] = []\n            pos = state.position.get(product, 0)\n            limit = self.POSITION_LIMITS.get(product, 80)\n\n            if not depth.buy_orders or not depth.sell_orders:\n                result[product] = []\n                continue\n\n            best_bid = max(depth.buy_orders)\n            best_ask = min(depth.sell_orders)\n            mid = (best_bid + best_ask) / 2\n\n            # TODO: per-product strategy\n            # INTARIAN_PEPPER_ROOT -> stable fair value MM\n            # ASH_COATED_OSMIUM -> pattern/regime-aware\n\n            result[product] = orders\n\n        # Persist state\n        traderData = json.dumps(trader_state)\n        conversions = 0\n        return result, conversions, traderData\n",
   "anti_patterns": [
-    "Using live market data assumptions: Prosperity has its own fake products and liquidity profiles.",
-    "Assuming free, unbounded shorts: products have position limits and symmetric long/short caps.",
-    "Copy-pasting per-product code without regime-awareness: products change behavior between rounds.",
-    "Ignoring `observations` / conversions in later rounds.",
-    "Treating round 4/5 manual sections as algorithmic."
+    "Using old product names (AMETHYSTS, STARFRUIT, KELP) — Prosperity 4 has entirely new products.",
+    "Assuming position limit is 20 or 50 — all Round 1/2 products have limit 80.",
+    "Not implementing bid() for Round 2 — zero bid means no extra market access, but at least you won't pay a fee.",
+    "Bidding the maximum for market access without estimating cost vs. extra volume value.",
+    "Class-level mutable state — AWS Lambda re-creates the Trader instance each tick. Use traderData JSON.",
+    "Exceeding 50,000 chars in traderData — it will be silently truncated.",
+    "Symmetric MM on ASH_COATED_OSMIUM without regime detection — the 'hidden pattern' implies regime-aware entries.",
+    "Forgetting sell_orders quantities are NEGATIVE in OrderDepth.",
+    "Sending aggregated buy qty that would exceed limit-pos — exchange rejects ALL orders for that product.",
+    "Using external libraries — only stdlib + pandas, numpy, statistics, math, typing, jsonpickle are allowed."
   ],
   "submission_requirements": [
-    "Single Trader class with run(state) method.",
-    "Import only from `datamodel` and stdlib.",
-    "No external network calls, no disk I/O.",
-    "Sub-900ms per tick execution."
+    "Single Trader class with run(state: TradingState) -> (orders_by_product, conversions, traderData).",
+    "Optional bid() -> int method for Round 2 market access fee (ignored other rounds).",
+    "Import only from datamodel and allowed stdlib/libraries.",
+    "No network I/O, no disk I/O, no subprocess.",
+    "Sub-900ms per tick execution.",
+    "traderData must be a string <= 50,000 characters."
   ],
   "past_round_notes": [
-    "Mean-reversion with inventory-aware quoting tends to win market-making products.",
-    "Pair trading works when two products have stable spreads in backtests but can collapse under volatility.",
-    "Orchids / conversion-heavy products punish naive traders who ignore storage/conversion costs."
+    "INTARIAN_PEPPER_ROOT behaves like AMETHYSTS (prior years) — stable fair value, pure inventory-skewed MM.",
+    "ASH_COATED_OSMIUM has a 'hidden pattern' hinted by IMC — investigate autocorrelation, regime breaks, Bollinger z-score.",
+    "Round 2 MAF: optimal bid is slightly above the median expected competitor bid. Modelling competitor behavior game-theoretically is key.",
+    "Round 2 manual: Research is most capital-efficient early (log curve). Speed is purely competitive — estimate median.",
+    "Round 1 manual auction: you submit last, so bid the buyback price or just below to maximize fill at max buyback profit."
   ],
-  "prompt_addendum": "Context: IMC Prosperity. The code must expose a `Trader` class with a `run(state)` method. Do NOT use Backtrader; use the Prosperity SDK types from `datamodel`. Do NOT print STRATENGINE_STATS — instead return (orders_by_product, conversions, trader_data)."
+  "prompt_addendum": "Context: IMC Prosperity 4. Products in Round 1/2: INTARIAN_PEPPER_ROOT (stable, limit 80) and ASH_COATED_OSMIUM (volatile/patterned, limit 80). Tutorial products: EMERALDS and TOMATOES (both limit 80). The Trader class MUST have run(state: TradingState) -> (orders, conversions, traderData). For Round 2 add bid() -> int. Currency is XIRECs. AWS Lambda — use traderData JSON for state (max 50k chars). DO NOT use old product names. DO NOT assume position limits < 80. DO NOT print STRATENGINE_STATS. Prefer inventory-skewed MM for INTARIAN_PEPPER_ROOT; regime-aware mean-reversion for ASH_COATED_OSMIUM."
 }

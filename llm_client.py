@@ -99,6 +99,7 @@ def _cli_complete(model: str, prompt: str, timeout: int) -> str:
             text=True,
             timeout=timeout,
             cwd="/tmp",
+            env={**__import__("os").environ, "TOKENIZERS_PARALLELISM": "false"},
         )
     except subprocess.TimeoutExpired as e:
         raise RuntimeError(f"claude CLI timed out after {timeout}s") from e

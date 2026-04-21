@@ -39,13 +39,27 @@ def _call(model: str, prompt: str, max_tokens: int = 4096) -> str:
     return llm_client.complete(model=model, prompt=prompt, max_tokens=max_tokens)
 
 
-def synthesize(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:
+def _with_prefix(prompt: str, prefix: str | None) -> str:
+    if not prefix:
+        return prompt
+    return f"COMPETITION CONTEXT (read first):\n{prefix.strip()}\n\n---\n\n{prompt}"
+
+
+def synthesize(
+    round_ctx: RoundContext,
+    cards: list[StrategyCard],
+    *,
+    prefix: str | None = None,
+) -> dict:
     s = load_settings()
     tpl = _load("synthesize.txt")
-    prompt = _render(
-        tpl,
-        round_context_json=round_ctx.model_dump_json(indent=2),
-        cards_json=json.dumps([json.loads(c.model_dump_json()) for c in cards], indent=2),
+    prompt = _with_prefix(
+        _render(
+            tpl,
+            round_context_json=round_ctx.model_dump_json(indent=2),
+            cards_json=json.dumps([json.loads(c.model_dump_json()) for c in cards], indent=2),
+        ),
+        prefix,
     )
     log_id = prompt_logger.log_call(
         "synthesize.txt",
@@ -62,13 +76,18 @@ def synthesize(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:
     return data
 
 
-def critique(round_ctx: RoundContext, candidates: list[dict]) -> dict:
+def critique(
+    round_ctx: RoundContext, candidates: list[dict], *, prefix: str | None = None
+) -> dict:
     s = load_settings()
     tpl = _load("critic.txt")
-    prompt = _render(
-        tpl,
-        round_context_json=round_ctx.model_dump_json(indent=2),
-        candidates_json=json.dumps(candidates, indent=2),
+    prompt = _with_prefix(
+        _render(
+            tpl,
+            round_context_json=round_ctx.model_dump_json(indent=2),
+            candidates_json=json.dumps(candidates, indent=2),
+        ),
+        prefix,
     )
     log_id = prompt_logger.log_call(
         "critic.txt",
@@ -85,13 +104,18 @@ def critique(round_ctx: RoundContext, candidates: list[dict]) -> dict:
     return data
 
 
-def code_for(round_ctx: RoundContext, candidate: dict) -> str:
+def code_for(
+    round_ctx: RoundContext, candidate: dict, *, prefix: str | None = None
+) -> str:
     s = load_settings()
     tpl = _load("code.txt")
-    prompt = _render(
-        tpl,
-        round_context_json=round_ctx.model_dump_json(indent=2),
-        candidate_json=json.dumps(candidate, indent=2),
+    prompt = _with_prefix(
+        _render(
+            tpl,
+            round_context_json=round_ctx.model_dump_json(indent=2),
+            candidate_json=json.dumps(candidate, indent=2),
+        ),
+        prefix,
     )
     log_id = prompt_logger.log_call(
         "code.txt",
@@ -110,11 +134,18 @@ def code_for(round_ctx: RoundContext, candidate: dict) -> str:
     return code
 
 
-def generate(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:
-    """End-to-end: synthesize → critique → code accepted candidates."""
-    synth = synthesize(round_ctx, cards)
+def generate(
+    round_ctx: RoundContext, cards: list[StrategyCard], *, prefix: str | None = None
+) -> dict:
+    """End-to-end: synthesize → critique → code accepted candidates.
+
+    `prefix` is a competition-specific addendum that gets prepended to every
+    LLM call so Claude has the right framing (e.g. IMC Trader class shape,
+    WQ BRAIN operator set, QC LEAN patterns).
+    """
+    synth = synthesize(round_ctx, cards, prefix=prefix)
     candidates = synth.get("candidates", [])
-    reviews = critique(round_ctx, candidates).get("reviews", [])
+    reviews = critique(round_ctx, candidates, prefix=prefix).get("reviews", [])
     review_by_name = {r.get("name"): r for r in reviews}
 
     accepted: list[dict] = []
@@ -129,7 +160,7 @@ def generate(round_ctx: RoundContext, cards: list[StrategyCard]) -> dict:
     generated: list[dict] = []
     for cand in accepted:
         try:
-            code = code_for(round_ctx, cand)
+            code = code_for(round_ctx, cand, prefix=prefix)
         except Exception as e:
             console.log(f"[red]code error[/] {cand.get('name')}: {e}")
             continue

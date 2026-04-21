@@ -215,11 +215,21 @@ def _default_scenario_evaluator(
 
     csv_path = data_dir / f"{symbol}.csv"
     if not csv_path.exists():
-        raise MissingHistoricalDataError(
-            f"No historical CSV for scenario evaluation: {csv_path}. "
-            f"Provide OHLC CSVs (columns: date,open,high,low,close[,volume]) "
-            f"in data_dir or pass a custom scenario_evaluator."
-        )
+        # Attempt auto-fetch via Stooq before raising.
+        try:
+            import price_fetcher
+            price_fetcher.PRICES_DIR = data_dir
+            price_fetcher.fetch(symbol, start="2015-01-01", save=True)
+        except Exception as fetch_err:
+            raise MissingHistoricalDataError(
+                f"No historical CSV for scenario evaluation: {csv_path}. "
+                f"Auto-fetch also failed: {fetch_err}. "
+                f"Run: stratengine fetch-prices {symbol}"
+            ) from fetch_err
+        if not csv_path.exists():
+            raise MissingHistoricalDataError(
+                f"Auto-fetch ran but {csv_path} still missing."
+            )
     df = pd.read_csv(csv_path)
     df["date"] = pd.to_datetime(df["date"])
     window = df[(df["date"] >= start) & (df["date"] <= end)]
