@@ -1,16 +1,15 @@
 # Alpha History — WorldQuant IQC 2026
 
-RAG#0 database: past submitted alphas with results. Used by the Search Enhancement agent
-to learn what works and avoid repeating failures.
+Local database for tested alphas and results. Used by the refinement step to
+learn what worked locally and avoid repeating failures.
 
-Pattern inspired by:
-- Modi, P. (2024). alpha-gpt. GitHub. https://github.com/parthmodi152/alpha-gpt
-  (`sota_alphas` + `hypothesis_history` + `BacktestResult` state tracking)
-- Wang et al. (2025). Alpha-GPT. arXiv:2308.00016v2. (RAG#0 concept)
+Conceptually informed by public research on iterative alpha mining, including
+Wang et al., "Alpha-GPT: Human-AI Interactive Alpha Mining for Quantitative
+Investment", arXiv:2308.00016. No source code from that project is used here.
 
 ## Format
 Each entry: expression, BRAIN settings, test results (Sharpe, Fitness, Sub-Sharpe, Turnover, IC if known), lessons.
-`sota` = state-of-the-art: best result so far on any metric.
+`best` = best result so far on any metric.
 
 ---
 

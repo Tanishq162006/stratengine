@@ -496,8 +496,7 @@ def refine_cmd(
 ) -> None:
     """Search Enhancement: feed BRAIN results back → get 3 improved alpha mutations.
 
-    Implements the Alpha-GPT iterative refinement loop (parthmodi152/alpha-gpt pattern).
-    IC typically doubles after 10 rounds. Run after each BRAIN test to converge.
+    Run after each BRAIN test to diagnose failures and generate targeted mutations.
 
     Example:
         stratengine refine \\
@@ -546,7 +545,7 @@ def refine_cmd(
     prompt = prompt.replace("{{brain_results}}", brain_results)
     prompt = prompt.replace("{{examples}}", examples[:2000])
 
-    console.rule("[bold cyan]Search Enhancement — Alpha-GPT Refine[/]")
+    console.rule("[bold cyan]BRAIN Alpha Refinement[/]")
     console.print("[dim]Diagnosing failures and generating 3 mutations...[/]\n")
 
     text = llm_client.complete(model=s.coder_model, prompt=prompt, max_tokens=3000)

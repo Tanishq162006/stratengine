@@ -1,6 +1,8 @@
-# WorldQuant BRAIN — Complete Operator Reference
+# WorldQuant BRAIN — Operator Notes
 
-Source: Alpha-GPT paper (Wang et al., arXiv:2308.00016v2), WQ BRAIN platform docs, community references.
+Original StratEngine notes for common BRAIN-style operators and expression
+patterns. Verify exact availability and signatures in the BRAIN IDE before
+submission.
 
 ## Cross-Sectional Operators (operate across all stocks at one time)
 

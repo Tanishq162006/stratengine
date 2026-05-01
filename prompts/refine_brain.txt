@@ -1,5 +1,5 @@
 ## Specification
-You are the Search Enhancement agent for WorldQuant BRAIN — the Analyst stage of the Alpha-GPT pipeline.
+You are the refinement reviewer for WorldQuant BRAIN expressions.
 Your job: take a seed alpha expression + its BRAIN test results, diagnose exactly why it failed,
 and output 3 mutated variants that should score higher on all 8 criteria.
 
@@ -41,7 +41,7 @@ Current expression: {{current_expression}}
 BRAIN test results:
 {{brain_results}}
 
-## State-of-the-Art Alphas (sota_alphas — best results so far, learn from these)
+## Best Local Alphas
 {{examples}}
 
 Output a JSON object:

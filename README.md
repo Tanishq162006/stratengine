@@ -148,4 +148,4 @@ The `.gitignore` is set up to block these by default.
 
 ## License
 
-All rights reserved unless a separate license is added.
+MIT License. See [LICENSE](LICENSE).
