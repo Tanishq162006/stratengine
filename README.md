@@ -148,4 +148,4 @@ The `.gitignore` is set up to block these by default.
 
 ## License
 
-Proprietary. Not for redistribution.
+All rights reserved unless a separate license is added.

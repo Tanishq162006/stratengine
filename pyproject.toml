@@ -8,14 +8,13 @@ version = "0.1.0"
 description = "Competition-focused quant strategy research engine for IMC Prosperity, WorldQuant IQC, and QuantConnect workflows."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Proprietary" }
-authors = [{ name = "Tanishq Jain", email = "tanisshqajain@gmail.com" }]
+license = { text = "All Rights Reserved" }
+authors = [{ name = "Tanishq Jain" }]
 keywords = ["quant", "trading", "competitions", "llm", "rag", "strategy"]
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
-    "Private :: Do Not Upload",
 ]
 
 dependencies = [
