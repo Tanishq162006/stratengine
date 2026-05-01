@@ -14,9 +14,11 @@ def test_unknown_competition_returns_none():
     assert load_plugin("nonexistent_comp_xyz") is None
 
 
-def test_worldquant_not_registered():
-    # WQ has no custom harness — engine uses default path
-    assert load_plugin("worldquant_iqc") is None
+def test_worldquant_registered():
+    plugin = load_plugin("worldquant_iqc")
+    assert plugin is not None
+    assert plugin.name == "worldquant_iqc"
+    assert getattr(plugin, "output_ext", None) == ".txt"
 
 
 def test_quantconnect_not_registered():

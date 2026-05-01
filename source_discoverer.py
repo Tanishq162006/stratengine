@@ -15,7 +15,6 @@ import json
 import sqlite3
 from collections import Counter
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from config import SOURCES_DIR, load_settings
 from schema import StrategyCard

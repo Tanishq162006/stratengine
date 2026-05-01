@@ -17,7 +17,7 @@ import crawler as crawler_mod
 import extractor as extractor_mod
 import indexer as indexer_mod
 from config import CANDIDATES_DIR, RESULTS_DIR, ROUNDS_DIR, ensure_dirs
-from decision_scorer import ScorerWeights, score_playbook
+from decision_scorer import score_playbook
 from evaluator import evaluate, rank
 from generator import generate
 from manual_critic import attach_critiques, critique_playbooks, filter_by_verdict
@@ -31,6 +31,7 @@ import prompt_analyzer
 import report_generator
 import source_discoverer
 import source_quality as sq_mod
+import competitions
 from source_refresher import refresh_all
 from template_loader import load_template, merge_defaults, prompt_addendum
 from knowledge_loader import build_prefix
@@ -141,7 +142,11 @@ def round(
         raw = merge_defaults(raw, tpl)
         addendum = prompt_addendum(tpl)
         console.print(f"[cyan]template {template}:[/] {addendum[:120]}...")
-        knowledge_prefix = build_prefix(template, addendum)
+        knowledge_prefix = build_prefix(
+            template,
+            addendum,
+            query_text=json.dumps(raw, indent=2),
+        )
         prefix = knowledge_prefix if knowledge_prefix.strip() else None
     round_id = f"{int(time.time())}"
 
@@ -163,8 +168,9 @@ def round(
                 indent=2,
             )
         )
+        output_ext = competitions.output_ext_for(ctx.competition)
         for i, item in enumerate(result["candidates"]):
-            (CANDIDATES_DIR / f"{round_id}_cand_{i:02d}.py").write_text(item["code"])
+            (CANDIDATES_DIR / f"{round_id}_cand_{i:02d}{output_ext}").write_text(item["code"])
 
         if data is None:
             console.print(
@@ -358,7 +364,7 @@ def optimize_weights_cmd() -> None:
             "Run rounds to populate it.[/]"
         )
         raise typer.Exit(code=1)
-    rows = [json.loads(l) for l in rows_path.read_text().splitlines() if l.strip()]
+    rows = [json.loads(line) for line in rows_path.read_text().splitlines() if line.strip()]
     fitted = weight_optimizer.fit(rows)
     console.print(f"[green]Fitted[/] on {fitted.n_rounds} rounds: {fitted.weights}")
 
@@ -432,6 +438,140 @@ def retrieve_cmd(
         console.print(
             f"[cyan]{c.card_id}[/] {c.title} — {c.strategy_family.value}/{c.timeframe.value}"
         )
+
+
+@app.command("setup")
+def setup_cmd() -> None:
+    """Interactive first-time setup: choose your competition plugin, then bootstrap."""
+    ensure_dirs()
+    from template_loader import TEMPLATES_DIR
+
+    available = sorted(p.stem for p in TEMPLATES_DIR.glob("*.json"))
+    console.print("\n[bold cyan]StratEngine — First-Time Setup[/]\n")
+    console.print("Which competition are you preparing for?\n")
+    for i, name in enumerate(available, 1):
+        console.print(f"  [{i}] {name}")
+    console.print()
+
+    choice = typer.prompt("Enter number or template name", default="imc_prosperity")
+    if choice.isdigit():
+        idx = int(choice) - 1
+        if 0 <= idx < len(available):
+            template_name = available[idx]
+        else:
+            console.print("[red]Invalid choice.[/]")
+            raise typer.Exit(1)
+    elif choice in available:
+        template_name = choice
+    else:
+        console.print(f"[red]Unknown template '{choice}'. Available: {available}[/]")
+        raise typer.Exit(1)
+
+    console.print(f"\n[green]Selected:[/] {template_name}\n")
+    console.print(
+        f"[dim]Tip: use --template {template_name} with every 'play' command.[/]\n"
+    )
+
+    if template_name.startswith("worldquant"):
+        console.print(
+            "[cyan]WorldQuant BRAIN plugin selected.[/] "
+            "Output files will be .txt alpha expressions (not .py scripts).\n"
+            "Paste them directly into the BRAIN IDE.\n"
+        )
+
+    run_bootstrap = typer.confirm("Run bootstrap now (crawl + extract + index)?", default=True)
+    if run_bootstrap:
+        bootstrap_cmd(seeds=Path("sources/seeds.json"), skip_crawl=False, skip_prices=True, prices="")
+
+
+@app.command("refine")
+def refine_cmd(
+    expression: str = typer.Option(..., help="Current BRAIN alpha expression to improve."),
+    sharpe: float = typer.Option(..., help="BRAIN IS Sharpe from test results."),
+    fitness: float = typer.Option(..., help="BRAIN Fitness score from test results."),
+    sub_sharpe: float = typer.Option(..., help="BRAIN Sub-universe Sharpe from test results."),
+    turnover: float = typer.Option(..., help="BRAIN Turnover % from test results."),
+    ic: float = typer.Option(0.0, help="Information Coefficient if shown by BRAIN."),
+    notes: str = typer.Option("", help="Any extra notes or warnings from BRAIN."),
+) -> None:
+    """Search Enhancement: feed BRAIN results back → get 3 improved alpha mutations.
+
+    Implements the Alpha-GPT iterative refinement loop (parthmodi152/alpha-gpt pattern).
+    IC typically doubles after 10 rounds. Run after each BRAIN test to converge.
+
+    Example:
+        stratengine refine \\
+          --expression "scale(group_neutralize(...))" \\
+          --sharpe 1.04 --fitness 0.50 --sub-sharpe 0.35 --turnover 33.72
+    """
+    ensure_dirs()
+    from config import PROMPTS_DIR, load_settings
+    import llm_client
+
+    s = load_settings()
+    tpl = (PROMPTS_DIR / "refine_brain.txt").read_text(encoding="utf-8")
+
+    passed = sum([sharpe >= 1.25, fitness >= 1.0, sub_sharpe >= 0.45, 1 <= turnover <= 70])
+    is_sota = sharpe >= 1.25 and fitness >= 1.0 and sub_sharpe >= 0.45
+    brain_results = (
+        f"Sharpe: {sharpe} ({'PASS' if sharpe >= 1.25 else 'FAIL – below 1.25'})\n"
+        f"Fitness: {fitness} ({'PASS' if fitness >= 1.0 else 'FAIL – below 1.0'})\n"
+        f"Sub-universe Sharpe: {sub_sharpe} ({'PASS' if sub_sharpe >= 0.45 else 'FAIL – below 0.45'})\n"
+        f"Turnover: {turnover}% ({'PASS' if 1 <= turnover <= 70 else 'FAIL'})\n"
+        f"IC: {ic if ic else 'not provided'}\n"
+        f"Overall: {passed}/4 core metrics passing. {'SOTA CANDIDATE' if is_sota else 'Not yet qualifying.'}\n"
+    )
+    if notes:
+        brain_results += f"Warnings/Notes: {notes}\n"
+
+    # Auto-append to alpha history (RAG#0)
+    history_path = Path("knowledge/worldquant_iqc/alpha_history.md")
+    if history_path.exists():
+        entry = (
+            f"\n\n### alpha_{int(time.time())} {'[SOTA]' if is_sota else ''}\n"
+            f"**Expression:** `{expression}`\n"
+            f"**Results:** Sharpe {sharpe} | Fitness {fitness} | Sub-Sharpe {sub_sharpe} | "
+            f"Turnover {turnover}% | IC {ic or 'N/A'}\n"
+            f"**Status:** {'ALL PASS' if is_sota else f'{passed}/4 passing'}\n"
+        )
+        with open(history_path, "a", encoding="utf-8") as f:
+            f.write(entry)
+        console.print(f"[dim]Logged to alpha_history.md{' [SOTA]' if is_sota else ''}[/]")
+
+    # Load alpha history as examples for RAG#0
+    history_path = Path("knowledge/worldquant_iqc/alpha_history.md")
+    examples = history_path.read_text(encoding="utf-8") if history_path.exists() else "No history yet."
+
+    prompt = tpl.replace("{{current_expression}}", expression)
+    prompt = prompt.replace("{{brain_results}}", brain_results)
+    prompt = prompt.replace("{{examples}}", examples[:2000])
+
+    console.rule("[bold cyan]Search Enhancement — Alpha-GPT Refine[/]")
+    console.print("[dim]Diagnosing failures and generating 3 mutations...[/]\n")
+
+    text = llm_client.complete(model=s.coder_model, prompt=prompt, max_tokens=3000)
+
+    import re as _re
+    m = _re.search(r"\{.*\}", text, _re.DOTALL)
+    if m:
+        try:
+            data = json.loads(m.group(0))
+            console.print(f"[bold]Diagnosis:[/] {data.get('diagnosis', '')}\n")
+            for i, mut in enumerate(data.get("mutations", []), 1):
+                console.rule(f"Mutation {i}: {mut.get('name', '')}")
+                console.print(f"[cyan]Change:[/] {mut.get('change', '')}")
+                console.print(f"\n[bold green]{mut.get('expression', '')}[/]\n")
+            # Save mutations to candidates dir
+            round_id = f"{int(time.time())}"
+            for i, mut in enumerate(data.get("mutations", []), 0):
+                (CANDIDATES_DIR / f"{round_id}_refined_{i:02d}.txt").write_text(
+                    mut.get("expression", "")
+                )
+            console.print(f"[green]Saved to memory/candidates/{round_id}_refined_*.txt[/]")
+        except json.JSONDecodeError:
+            console.print(text)
+    else:
+        console.print(text)
 
 
 @app.command("bootstrap")
@@ -517,7 +657,7 @@ def play_cmd(
     ensure_dirs()
     from context_builder import build_context
 
-    console.print(f"[bold cyan]Building context from prompt...[/]")
+    console.print("[bold cyan]Building context from prompt...[/]")
     detected_mode, ctx = build_context(prompt, template_name=template)
     resolved_mode = mode or detected_mode
     console.print(f"[cyan]Mode:[/] {resolved_mode}  [cyan]Context:[/] {type(ctx).__name__}")
@@ -525,11 +665,15 @@ def play_cmd(
     # Build prefix from template knowledge (same logic as round_cmd)
     prefix: str | None = None
     if template:
-        from template_loader import load_template, merge_defaults
+        from template_loader import load_template
         from knowledge_loader import build_prefix
         tpl = load_template(template)
         addendum = prompt_addendum(tpl)
-        knowledge_prefix = build_prefix(template, addendum)
+        knowledge_prefix = build_prefix(
+            template,
+            addendum,
+            query_text=f"{prompt}\n\n{ctx.model_dump_json(indent=2)}",
+        )
         prefix = knowledge_prefix if knowledge_prefix.strip() else None
 
     round_id = f"{int(time.time())}"
@@ -556,12 +700,14 @@ def play_cmd(
                 indent=2,
             )
         )
+        _ext = competitions.output_ext_for(ctx.competition)
         for i, item in enumerate(result["candidates"]):
-            (CANDIDATES_DIR / f"{round_id}_cand_{i:02d}.py").write_text(item["code"])
+            (CANDIDATES_DIR / f"{round_id}_cand_{i:02d}{_ext}").write_text(item["code"])
 
         if data is None:
+            _fmt = "BRAIN .txt expression files" if _ext == ".txt" else "Python .py candidates"
             console.print(
-                f"[green]Done.[/] {len(result['candidates'])} candidates in memory/candidates/ "
+                f"[green]Done.[/] {len(result['candidates'])} {_fmt} in memory/candidates/ "
                 f"(pass --data CSV to also evaluate)."
             )
             return
@@ -573,8 +719,11 @@ def play_cmd(
         ranked_results = rank(results)
 
         table = Table(title="Algo candidates")
-        table.add_column("Rank"); table.add_column("Candidate")
-        table.add_column("Score"); table.add_column("Sharpe"); table.add_column("MaxDD")
+        table.add_column("Rank")
+        table.add_column("Candidate")
+        table.add_column("Score")
+        table.add_column("Sharpe")
+        table.add_column("MaxDD")
         for i, r in enumerate(ranked_results):
             table.add_row(
                 str(i + 1), r.candidate_name, f"{r.score:.3f}",

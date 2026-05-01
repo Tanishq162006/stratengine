@@ -20,11 +20,10 @@ import importlib.util
 import json
 import math
 import sys
-import tempfile
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 # ---------------------------------------------------------------------------
@@ -241,13 +240,11 @@ def run_simulation(
         try:
             result = trader.run(state)
             if isinstance(result, tuple) and len(result) == 3:
-                orders_by_product, conversions, trader_data = result
+                orders_by_product, _conversions, trader_data = result
             elif isinstance(result, tuple) and len(result) == 2:
                 orders_by_product, trader_data = result
-                conversions = 0
             else:
                 orders_by_product = result or {}
-                conversions = 0
                 trader_data = ""
         except Exception as e:
             violations.append(f"tick {tick} error: {e}")

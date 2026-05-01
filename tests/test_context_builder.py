@@ -76,6 +76,55 @@ def test_build_context_manual(monkeypatch):
     assert "SPY" in ctx.symbols
 
 
+def test_build_context_normalizes_aliases(monkeypatch):
+    """Common LLM aliases are normalized before schema validation."""
+    import llm_client
+
+    mock_output = json.dumps({
+        "mode": "algo",
+        "context": {
+            "competition": "worldquant",
+            "round_name": "Alias Test",
+            "asset_class": "forex",
+            "symbol": "EURUSD",
+            "timeframe": "1mo",
+            "backtest_start": "2024-01-01",
+            "backtest_end": "2024-12-31",
+        },
+    })
+    monkeypatch.setattr(llm_client, "complete", lambda **kwargs: mock_output)
+
+    mode, ctx = build_context("monthly FX signal")
+    assert mode == "algo"
+    assert isinstance(ctx, RoundContext)
+    assert ctx.competition == "worldquant_iqc"
+    assert ctx.asset_classes[0].value == "fx"
+    assert ctx.symbols == ["EURUSD"]
+    assert ctx.timeframe.value == "1M"
+
+
+def test_build_context_uses_template_loader_defaults(monkeypatch):
+    """Missing algo fields are filled from the template file, not duplicated constants."""
+    import llm_client
+
+    mock_output = json.dumps({
+        "mode": "algo",
+        "context": {
+            "round_name": "Template Defaults",
+            "asset_classes": ["equity"],
+            "timeframe": "1d",
+        },
+    })
+    monkeypatch.setattr(llm_client, "complete", lambda **kwargs: mock_output)
+
+    _, ctx = build_context("simple QC idea", template_name="quantconnect")
+    assert isinstance(ctx, RoundContext)
+    assert ctx.competition == "quantconnect"
+    assert ctx.backtest_start == "2018-01-01"
+    assert ctx.backtest_end == "2023-12-31"
+    assert ctx.starting_capital == 100000.0
+
+
 def test_build_context_llm_failure_raises(monkeypatch):
     """build_context re-raises LLM errors."""
     import llm_client

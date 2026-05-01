@@ -1,9 +1,8 @@
 """Tests for price_fetcher.py."""
-import csv
-import io
-import pytest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import httpx
+import pytest
 
 import price_fetcher
 

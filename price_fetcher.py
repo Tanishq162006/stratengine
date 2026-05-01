@@ -12,7 +12,7 @@ from __future__ import annotations
 import csv
 import io
 import time
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Sequence
 

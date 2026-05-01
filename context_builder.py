@@ -11,54 +11,28 @@ import re
 
 from config import PROMPTS_DIR, load_settings
 from schema import RoundContext, TradingContext
+from template_loader import load_template
 import llm_client
 import prompt_logger
 
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
 
-_TEMPLATE_DEFAULTS: dict[str, dict] = {
-    "imc_prosperity": {
-        "competition": "imc_prosperity",
-        "round_name": "Round 1",
-        "asset_classes": ["multi_asset"],
-        "timeframe": "1m",
-        "backtest_start": "2026-04-14",
-        "backtest_end": "2026-04-17",
-        "starting_capital": 0.0,
-        "max_leverage": 1.0,
-        "transaction_cost_bps": 0.0,
-        "slippage_bps": 0.0,
-        "objective": "total_return",
-        "preferred_strategy_families": ["market_making", "mean_reversion", "arbitrage"],
-    },
-    "worldquant_iqc": {
-        "competition": "worldquant_iqc",
-        "round_name": "Round 1",
-        "asset_classes": ["equity"],
-        "timeframe": "1d",
-        "backtest_start": "2020-01-01",
-        "backtest_end": "2024-12-31",
-        "starting_capital": 0.0,
-        "max_leverage": 1.0,
-        "transaction_cost_bps": 5.0,
-        "slippage_bps": 2.0,
-        "objective": "sharpe",
-        "preferred_strategy_families": ["factor", "mean_reversion", "momentum"],
-    },
-    "quantconnect": {
-        "competition": "quantconnect",
-        "round_name": "Round 1",
-        "asset_classes": ["equity"],
-        "timeframe": "1d",
-        "backtest_start": "2018-01-01",
-        "backtest_end": "2023-12-31",
-        "starting_capital": 100000.0,
-        "max_leverage": 1.0,
-        "transaction_cost_bps": 5.0,
-        "slippage_bps": 2.0,
-        "objective": "sharpe",
-        "preferred_strategy_families": ["momentum", "mean_reversion", "trend_following"],
-    },
+_ASSET_CLASS_ALIASES = {
+    "forex": "fx",
+}
+
+_TIMEFRAME_ALIASES = {
+    "1mo": "1M",
+    "1month": "1M",
+    "monthly": "1M",
+    "daily": "1d",
+    "weekly": "1w",
+}
+
+_COMPETITION_ALIASES = {
+    "worldquant": "worldquant_iqc",
+    "worldquant_brain": "worldquant_iqc",
+    "brain": "worldquant_iqc",
 }
 
 
@@ -76,6 +50,77 @@ def _extract_json(text: str) -> dict:
     return json.loads(m.group(0))
 
 
+def _template_defaults(template_name: str | None) -> dict:
+    if not template_name:
+        return {}
+    try:
+        template = load_template(template_name)
+    except FileNotFoundError:
+        return {}
+    return dict(template.get("round_context_defaults", {}))
+
+
+def _normalize_list_field(
+    value: object,
+    aliases: dict[str, str],
+) -> list[str] | object:
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, list):
+        return value
+
+    normalized: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            normalized.append(item)
+            continue
+        key = item.strip().lower()
+        normalized.append(aliases.get(key, item.strip()))
+    return normalized
+
+
+def _normalize_scalar_field(value: object, aliases: dict[str, str]) -> object:
+    if not isinstance(value, str):
+        return value
+    key = value.strip().lower()
+    return aliases.get(key, value.strip())
+
+
+def _normalize_context(ctx_raw: dict) -> dict:
+    normalized = dict(ctx_raw)
+
+    if "asset_classes" in normalized:
+        normalized["asset_classes"] = _normalize_list_field(
+            normalized["asset_classes"],
+            _ASSET_CLASS_ALIASES,
+        )
+    if "timeframe" in normalized:
+        normalized["timeframe"] = _normalize_scalar_field(
+            normalized["timeframe"],
+            _TIMEFRAME_ALIASES,
+        )
+    if "competition" in normalized:
+        normalized["competition"] = _normalize_scalar_field(
+            normalized["competition"],
+            _COMPETITION_ALIASES,
+        )
+
+    if "preferred_strategy_families" in normalized and isinstance(
+        normalized["preferred_strategy_families"], str
+    ):
+        normalized["preferred_strategy_families"] = [
+            normalized["preferred_strategy_families"]
+        ]
+    if "excluded_strategy_families" in normalized and isinstance(
+        normalized["excluded_strategy_families"], str
+    ):
+        normalized["excluded_strategy_families"] = [
+            normalized["excluded_strategy_families"]
+        ]
+
+    return normalized
+
+
 def build_context(
     user_prompt: str,
     template_name: str | None = None,
@@ -89,7 +134,7 @@ def build_context(
     s = load_settings()
     tpl_txt = (PROMPTS_DIR / "context_builder.txt").read_text(encoding="utf-8")
 
-    template_defaults = _TEMPLATE_DEFAULTS.get(template_name or "", {})
+    template_defaults = _template_defaults(template_name)
     prompt = _render(
         tpl_txt,
         user_prompt=user_prompt,
@@ -120,9 +165,12 @@ def build_context(
         val = ctx_raw.pop("symbol")
         ctx_raw["symbols"] = [val] if isinstance(val, str) else val
 
+    ctx_raw = _normalize_context(ctx_raw)
+
     # Fill in template defaults for any missing fields
-    for k, v in template_defaults.items():
-        ctx_raw.setdefault(k, v)
+    if mode == "algo":
+        for k, v in template_defaults.items():
+            ctx_raw.setdefault(k, v)
 
     try:
         if mode == "manual":

@@ -28,6 +28,23 @@ memory/results/*
 memory/postmortems/*
 !memory/**/.gitkeep
 
+# Competition datasets, generated submissions, and local research dumps
+/bt_data/
+/IMC*/
+/*Prosperity*Round*/
+/Winner*/
+best_v*.py
+round*_backtest.py
+R*_IDEAS.md
+ROUND*_STRATEGY_DOC.md
+trades_round_*.csv
+prices_round_*.csv
+memory/manual_strategies/
+memory/reference_repos/
+memory/strategies/
+memory/*data*findings*.md
+memory/feedback_*.md
+
 # DBs + indexes
 *.db
 *.sqlite

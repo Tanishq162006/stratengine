@@ -1,17 +1,16 @@
-"""Walk-forward evaluation, parameter sensitivity, ablation. The actual
-backtest execution is delegated to a user-supplied runner so this module is
-testable without Backtrader + data files.
+"""Walk-forward evaluation, parameter sensitivity, and ablation helpers.
+
+Backtest execution is delegated to a caller-provided runner so this module
+stays testable without external data files or Backtrader.
 """
 from __future__ import annotations
 
 import re
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, timedelta
-from pathlib import Path
 from typing import Callable
 
-# runner signature: (code, start, end) -> stats dict OR None on failure
 Runner = Callable[[str, str, str], dict | None]
 
 
@@ -29,8 +28,8 @@ class WalkForwardSplit:
 class WalkForwardReport:
     splits: list[WalkForwardSplit]
     mean_test_sharpe: float
-    sharpe_decay: float  # mean_train_sharpe - mean_test_sharpe (positive => overfit)
-    pass_fraction: float  # fraction of splits with test sharpe > 0
+    sharpe_decay: float
+    pass_fraction: float
 
 
 def _split_windows(
@@ -44,15 +43,15 @@ def _split_windows(
     window = total // n_splits
     out: list[tuple[str, str, str, str]] = []
     for i in range(n_splits):
-        ws = d0 + timedelta(days=i * window)
-        we = ws + timedelta(days=window)
-        train_end = ws + timedelta(days=int(window * train_frac))
+        window_start = d0 + timedelta(days=i * window)
+        window_end = window_start + timedelta(days=window)
+        train_end = window_start + timedelta(days=int(window * train_frac))
         out.append(
             (
-                ws.isoformat(),
+                window_start.isoformat(),
                 train_end.isoformat(),
                 (train_end + timedelta(days=1)).isoformat(),
-                we.isoformat(),
+                window_end.isoformat(),
             )
         )
     return out
@@ -67,12 +66,22 @@ def walk_forward(
     n_splits: int = 4,
     train_frac: float = 0.7,
 ) -> WalkForwardReport:
-    splits_raw = _split_windows(start, end, n_splits, train_frac)
     splits: list[WalkForwardSplit] = []
-    for ts, te, ts2, te2 in splits_raw:
-        train_stats = runner(code, ts, te)
-        test_stats = runner(code, ts2, te2)
-        splits.append(WalkForwardSplit(ts, te, ts2, te2, train_stats, test_stats))
+    for train_start, train_end, test_start, test_end in _split_windows(
+        start, end, n_splits, train_frac
+    ):
+        train_stats = runner(code, train_start, train_end)
+        test_stats = runner(code, test_start, test_end)
+        splits.append(
+            WalkForwardSplit(
+                train_start,
+                train_end,
+                test_start,
+                test_end,
+                train_stats,
+                test_stats,
+            )
+        )
 
     def _mean(field: str, stats_list: list[dict | None]) -> float:
         vals = [float(s[field]) for s in stats_list if s and field in s]
@@ -80,19 +89,17 @@ def walk_forward(
 
     mean_test = _mean("sharpe", [s.test_stats for s in splits])
     mean_train = _mean("sharpe", [s.train_stats for s in splits])
-    pass_frac = sum(
-        1 for s in splits if s.test_stats and float(s.test_stats.get("sharpe", 0)) > 0
+    pass_fraction = sum(
+        1 for split in splits if split.test_stats and float(split.test_stats.get("sharpe", 0)) > 0
     ) / max(1, len(splits))
 
     return WalkForwardReport(
         splits=splits,
         mean_test_sharpe=mean_test,
         sharpe_decay=mean_train - mean_test,
-        pass_fraction=pass_frac,
+        pass_fraction=pass_fraction,
     )
 
-
-# ------------------------------ parameter sweep ------------------------------
 
 _NUM_RE = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)(?![\w.])")
 
@@ -110,11 +117,8 @@ def _substitute_nth_number(code: str, idx: int, new_value: float) -> str | None:
     matches = list(_NUM_RE.finditer(code))
     if idx >= len(matches):
         return None
-    m = matches[idx]
-    before = code[: m.start()]
-    after = code[m.end() :]
-    rendered = f"{new_value:g}"
-    return before + rendered + after
+    match = matches[idx]
+    return code[: match.start()] + f"{new_value:g}" + code[match.end() :]
 
 
 def param_sweep(
@@ -131,27 +135,26 @@ def param_sweep(
     matches = list(_NUM_RE.finditer(code))
     base_stats = runner(code, start, end)
     base_sharpe = float((base_stats or {}).get("sharpe", 0.0))
+
     for idx in param_indices:
         if idx >= len(matches):
             continue
         original = float(matches[idx].group(0))
         values: list[float] = []
         sharpes: list[float] = []
-        for mult in multipliers:
-            new_val = original * mult
-            mutated = _substitute_nth_number(code, idx, new_val)
+        for multiplier in multipliers:
+            new_value = original * multiplier
+            mutated = _substitute_nth_number(code, idx, new_value)
             if mutated is None:
                 continue
             stats = runner(mutated, start, end)
-            values.append(new_val)
+            values.append(new_value)
             sharpes.append(float((stats or {}).get("sharpe", 0.0)))
         if not sharpes:
             continue
-        mean = statistics.mean(sharpes) if sharpes else 0.0
+        mean = statistics.mean(sharpes)
         stdev = statistics.pstdev(sharpes) if len(sharpes) > 1 else 0.0
-        fragile = False
-        if base_sharpe > 0 and mean > 0:
-            fragile = (stdev / mean) > fragility_ratio
+        fragile = base_sharpe > 0 and mean > 0 and (stdev / mean) > fragility_ratio
         out.append(
             ParamSweepResult(
                 param_label=f"num[{idx}]={original:g}",
@@ -162,8 +165,6 @@ def param_sweep(
         )
     return out
 
-
-# ------------------------------ ablation ------------------------------
 
 @dataclass
 class AblationResult:
@@ -182,30 +183,26 @@ def ablation(
     components: list[str],
     tolerance: float = 0.05,
 ) -> list[AblationResult]:
-    """For each component string (e.g. 'self.atr'), comment out lines mentioning
-    it and re-run. If ablated Sharpe is not materially lower, flag as decorative.
-    """
+    """Comment out component lines and flag components that do not affect Sharpe."""
     base_stats = runner(code, start, end)
     base_sharpe = float((base_stats or {}).get("sharpe", 0.0))
     results: list[AblationResult] = []
-    for comp in components:
-        lines = code.splitlines()
-        ablated = []
-        for ln in lines:
-            if comp in ln and not ln.lstrip().startswith("#"):
-                ablated.append("# " + ln)
+
+    for component in components:
+        ablated_lines = []
+        for line in code.splitlines():
+            if component in line and not line.lstrip().startswith("#"):
+                ablated_lines.append("# " + line)
             else:
-                ablated.append(ln)
-        mutated = "\n".join(ablated)
-        stats = runner(mutated, start, end)
+                ablated_lines.append(line)
+        stats = runner("\n".join(ablated_lines), start, end)
         ablated_sharpe = float((stats or {}).get("sharpe", 0.0))
-        decorative = (base_sharpe - ablated_sharpe) <= tolerance
         results.append(
             AblationResult(
-                component=comp,
+                component=component,
                 baseline_sharpe=base_sharpe,
                 ablated_sharpe=ablated_sharpe,
-                decorative=decorative,
+                decorative=(base_sharpe - ablated_sharpe) <= tolerance,
             )
         )
     return results

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 from rich.console import Console
 
@@ -15,6 +14,14 @@ import prompt_logger
 console = Console()
 
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
+_SYNTH_TEMPLATES = {
+    "worldquant_iqc": "synthesize_brain.txt",
+}
+_CODER_TEMPLATES = {
+    "imc_prosperity": "code_imc.txt",
+    "worldquant_iqc": "code_brain.txt",
+    "quantconnect": "code_quantconnect.txt",
+}
 
 
 def _load(name: str) -> str:
@@ -45,6 +52,14 @@ def _with_prefix(prompt: str, prefix: str | None) -> str:
     return f"COMPETITION CONTEXT (read first):\n{prefix.strip()}\n\n---\n\n{prompt}"
 
 
+def _synth_template_name(round_ctx: RoundContext) -> str:
+    return _SYNTH_TEMPLATES.get(round_ctx.competition, "synthesize.txt")
+
+
+def _coder_template_name(round_ctx: RoundContext) -> str:
+    return _CODER_TEMPLATES.get(round_ctx.competition, "code.txt")
+
+
 def synthesize(
     round_ctx: RoundContext,
     cards: list[StrategyCard],
@@ -52,7 +67,8 @@ def synthesize(
     prefix: str | None = None,
 ) -> dict:
     s = load_settings()
-    tpl = _load("synthesize.txt")
+    tpl_name = _synth_template_name(round_ctx)
+    tpl = _load(tpl_name)
     prompt = _with_prefix(
         _render(
             tpl,
@@ -62,7 +78,7 @@ def synthesize(
         prefix,
     )
     log_id = prompt_logger.log_call(
-        "synthesize.txt",
+        tpl_name,
         context=round_ctx.model_dump(mode="json"),
         input_obj={"n_cards": len(cards)},
     )
@@ -108,7 +124,8 @@ def code_for(
     round_ctx: RoundContext, candidate: dict, *, prefix: str | None = None
 ) -> str:
     s = load_settings()
-    tpl = _load("code.txt")
+    tpl_name = _coder_template_name(round_ctx)
+    tpl = _load(tpl_name)
     prompt = _with_prefix(
         _render(
             tpl,
@@ -118,7 +135,7 @@ def code_for(
         prefix,
     )
     log_id = prompt_logger.log_call(
-        "code.txt",
+        tpl_name,
         context=round_ctx.model_dump(mode="json"),
         input_obj={"candidate": candidate.get("name")},
     )
@@ -127,7 +144,7 @@ def code_for(
     except Exception as e:
         prompt_logger.finalize(log_id, "failure", notes=str(e))
         raise
-    code = re.sub(r"^```(?:python)?\s*\n|\n```\s*$", "", text.strip(), flags=re.MULTILINE)
+    code = re.sub(r"^```(?:python|brain)?\s*\n|\n```\s*$", "", text.strip(), flags=re.MULTILINE)
     prompt_logger.finalize(
         log_id, "success", metric=float(len(code)), output_id=candidate.get("name")
     )

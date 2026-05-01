@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "stratengine"
 version = "0.1.0"
-description = "Quant strategy research pipeline: articles -> Strategy Cards -> retrieval -> multi-agent synthesis -> Backtrader evaluation."
+description = "Competition-focused quant strategy research engine for IMC Prosperity, WorldQuant IQC, and QuantConnect workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
 authors = [{ name = "Tanishq Jain", email = "tanisshqajain@gmail.com" }]
-keywords = ["quant", "trading", "backtesting", "llm", "rag", "strategy"]
+keywords = ["quant", "trading", "competitions", "llm", "rag", "strategy"]
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",

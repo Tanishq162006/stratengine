@@ -47,7 +47,43 @@
       "type": "volatile_patterned",
       "position_limit": 80,
       "notes": "Appears unpredictable but 'may follow a hidden pattern'. Investigate: mean-reversion, regime detection, Bollinger-style entries. Do NOT pure MM in large moves. Position limit 80."
-    }
+    },
+    "HYDROGEL_PACK": {
+      "round": "3+",
+      "type": "stable_value",
+      "position_limit": 200,
+      "fair_value": 10000,
+      "price_range": "9891-10079",
+      "notes": "Stable product ~10000 XIRECs. Pure inventory-skewed MM with spread 2-4 ticks. Treat like INTARIAN_PEPPER_ROOT at higher limit."
+    },
+    "VELVETFRUIT_EXTRACT": {
+      "round": "3+",
+      "type": "underlying",
+      "position_limit": 200,
+      "fair_value": 5250,
+      "price_range": "5198-5300",
+      "notes": "Underlying for all VEV options. Use its mid as S in Black-Scholes. Market-make independently AND use for delta hedging options book."
+    },
+    "VEV_4000": {"round": "3+", "type": "option_call", "strike": 4000, "position_limit": 300},
+    "VEV_4500": {"round": "3+", "type": "option_call", "strike": 4500, "position_limit": 300},
+    "VEV_5000": {"round": "3+", "type": "option_call", "strike": 5000, "position_limit": 300},
+    "VEV_5100": {"round": "3+", "type": "option_call", "strike": 5100, "position_limit": 300},
+    "VEV_5200": {"round": "3+", "type": "option_call", "strike": 5200, "position_limit": 300},
+    "VEV_5300": {"round": "3+", "type": "option_call", "strike": 5300, "position_limit": 300},
+    "VEV_5400": {"round": "3+", "type": "option_call", "strike": 5400, "position_limit": 300},
+    "VEV_5500": {"round": "3+", "type": "option_call", "strike": 5500, "position_limit": 300},
+    "VEV_6000": {"round": "3+", "type": "option_call", "strike": 6000, "position_limit": 300, "notes": "Deep OTM, near-zero value. Mid ~0.5."},
+    "VEV_6500": {"round": "3+", "type": "option_call", "strike": 6500, "position_limit": 300, "notes": "Deep OTM, near-zero value. Mid ~0.5."}
+  },
+  "round_3_mechanics": {
+    "tte": "TTE = 5 trading days at round start. Decrements by 1 each IMC day (10000 ticks). Use (5 - day) / 252 years.",
+    "options_style": "European calls on VELVETFRUIT_EXTRACT. Cash-settled at round end. No early exercise.",
+    "iv_calibrated": "IV ≈ 0.23 (23% annualized). Consistent across VEV_5000–VEV_5500 at S=5250.",
+    "strategy": "IV smile arbitrage per Rook-E1: map IV vs moneyness, buy underpriced vol (IV below smile baseline), sell overpriced. Size proportional to deviation.",
+    "biopod_bid1": 753,
+    "biopod_bid2": 840,
+    "biopod_num_teams": 4100,
+    "biopod_rationale": "Joint two-bid optimization: bid1=753 catches 17 counterparty tiers at 167 profit each; bid2=840 catches 17 more tiers at 80 profit each. Total E=4165 vs 3845 for naive bid1=795. bid2=840 is one step above Nash eq ~837 for penalty safety."
   },
   "simulation_specs": {
     "iterations_testing": 1000,
@@ -113,5 +149,5 @@
     "Round 2 manual: Research is most capital-efficient early (log curve). Speed is purely competitive — estimate median.",
     "Round 1 manual auction: you submit last, so bid the buyback price or just below to maximize fill at max buyback profit."
   ],
-  "prompt_addendum": "Context: IMC Prosperity 4. Products in Round 1/2: INTARIAN_PEPPER_ROOT (stable, limit 80) and ASH_COATED_OSMIUM (volatile/patterned, limit 80). Tutorial products: EMERALDS and TOMATOES (both limit 80). The Trader class MUST have run(state: TradingState) -> (orders, conversions, traderData). For Round 2 add bid() -> int. Currency is XIRECs. AWS Lambda — use traderData JSON for state (max 50k chars). DO NOT use old product names. DO NOT assume position limits < 80. DO NOT print STRATENGINE_STATS. Prefer inventory-skewed MM for INTARIAN_PEPPER_ROOT; regime-aware mean-reversion for ASH_COATED_OSMIUM."
+  "prompt_addendum": "Context: IMC Prosperity 4. Round 1/2 products: INTARIAN_PEPPER_ROOT (stable, limit 80), ASH_COATED_OSMIUM (volatile/patterned, limit 80). Tutorial: EMERALDS, TOMATOES (limit 80). Round 3+ products: HYDROGEL_PACK (stable ~10000, limit 200), VELVETFRUIT_EXTRACT (underlying ~5250, limit 200), VEV_4000/4500/5000/5100/5200/5300/5400/5500/6000/6500 (European call options, limit 300 each, TTE=5 days at round start, IV~0.23). Trader MUST implement run(state: TradingState) -> (orders, conversions, traderData). AWS Lambda — use traderData JSON (max 50k chars). DO NOT use old product names. For options: use Black-Scholes with r=0, extract IV per strike, fit IV smile, buy underpriced vol (IV below baseline), sell overpriced vol (IV above baseline), size proportional to deviation. Delta-hedge with VELVETFRUIT_EXTRACT. Bio-Pod manual: Bid1=795, Bid2=800."
 }

@@ -74,6 +74,43 @@ hedge_qty = max(-400 - rock_pos, min(hedge_qty, 400 - rock_pos))
 3. After each vol trade, delta-hedge with VOLCANIC_ROCK to remain delta-neutral.
 4. Re-hedge every tick (delta changes with S and T).
 
+## IV Smile / Volatility Structure (Round 3 VEV pattern)
+
+Round 3 introduces 10 VEV options on VELVETFRUIT_EXTRACT (S≈5250, strikes 4000–6500).
+Rook-E1 hint: map IV vs moneyness across ALL strikes, find structural outliers.
+
+```python
+# Compute per-strike IV and fit a smooth baseline
+ivs = {}
+for prod, K in STRIKES.items():
+    mid = get_mid(depth[prod])
+    ivs[prod] = implied_vol(mid, S, K, T, r=0.0)
+
+# Smooth baseline (simple mean of neighbors or polynomial)
+sorted_strikes = sorted(STRIKES.values())
+# Linear interpolation between adjacent IVs as baseline
+def fitted_iv(K):
+    ks = sorted_strikes
+    for i in range(len(ks)-1):
+        if ks[i] <= K <= ks[i+1]:
+            w = (K - ks[i]) / (ks[i+1] - ks[i])
+            return ivs_by_k[ks[i]] * (1-w) + ivs_by_k[ks[i+1]] * w
+    return mean_iv
+
+# Trade deviations
+THRESHOLD_IV = 0.02  # 2 vol points = signal
+for prod, K in STRIKES.items():
+    dev = ivs[prod] - fitted_iv(K)
+    if dev > THRESHOLD_IV:   # overpriced vol → sell
+        size = round(min(limit * abs(dev) / 0.05, 20))
+        place_sell(prod, bs_call(S, K, T, ivs[prod]), size)
+    elif dev < -THRESHOLD_IV: # underpriced vol → buy
+        size = round(min(limit * abs(dev) / 0.05, 20))
+        place_buy(prod, bs_call(S, K, T, ivs[prod]), size)
+```
+
+Key calibrated value: base IV ≈ 0.23 at Round 3 start (consistent across VEV_5000–VEV_5500).
+
 ## Anti-patterns
 
 - Using `r > 0` without justification — the competition has no risk-free rate; set `r=0`.

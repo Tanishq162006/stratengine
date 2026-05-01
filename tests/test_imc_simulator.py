@@ -1,13 +1,9 @@
 """Tests for imc_simulator.py."""
 import math
 import pytest
-from pathlib import Path
 
 from competitions.imc_prosperity.simulator import (
     Order,
-    OrderDepth,
-    TradingState,
-    Observation,
     _make_order_book,
     _fill_orders,
     _load_prices,

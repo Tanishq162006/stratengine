@@ -1,200 +1,151 @@
 # StratEngine
 
-StratEngine is a quant strategy research pipeline that combines a curated knowledge base with Claude LLM power to generate competition-ready trading algorithms from a single natural-language prompt.
+Competition-focused quant strategy research engine for turning market ideas into structured research, candidate strategies, and submission-ready artifacts.
 
-You describe what you want in plain English — "Round 1: PEPPER_ROOT market making, OSMIUM Bollinger mean-reversion" — and the system outputs working Python `.py` files ready to submit.
+StratEngine is built for fast strategy iteration under contest constraints. It combines curated domain knowledge, retrieval, LLM-assisted synthesis, validation, and lightweight evaluation tooling behind one CLI.
 
-It was built specifically for **IMC Prosperity 4** but the engine is competition-agnostic. Any competition can be added as a plugin.
+## Supported Competitions
 
----
+| Competition | Output | Local support |
+|---|---:|---|
+| IMC Prosperity | Python `Trader` submissions | Plugin simulator and submission scaffolding |
+| WorldQuant IQC / BRAIN | BRAIN DSL alpha expressions | Expression validation and refinement loop |
+| QuantConnect | LEAN-style strategy scaffolds | Template and knowledge pack |
 
-## What it does
+The repository intentionally does not include private competition datasets, copied winner submissions, generated candidates, prompt logs, local databases, or backtest dumps. See [docs/DATA_POLICY.md](docs/DATA_POLICY.md).
 
-```
-Your prompt (plain English)
-    → context_builder     parse into structured round context
-    → retriever           pull relevant strategy cards from knowledge base
-    → synthesizer         propose 5 candidate strategy designs
-    → critic              score and filter each design
-    → coder               write competition-ready Python for each accepted design
-    → evaluator           backtest + robustness check (if price data provided)
-    → memory/candidates/  ready-to-submit .py files
-```
+## Why This Exists
 
-Every LLM call is injected with **59k chars of expert quant context**: Avellaneda-Stoikov market making, Kalman/EMA fair value estimation, order book reading, pattern detection, Kelly sizing, end-of-round inventory management, and more — all hand-crafted for IMC Prosperity 4.
+StratEngine is designed for competition work where speed is useful only if the process is disciplined:
 
----
+- Convert a plain-English round brief into a typed strategy context.
+- Retrieve relevant strategy cards from reusable quant knowledge.
+- Generate and critique multiple candidate strategies.
+- Save artifacts in a predictable format for review or submission.
+- Track prompt performance, source quality, and retrieval behavior over time.
+- Keep competition data and generated submissions outside the repo.
 
-## Requirements
-
-- Python 3.11+
-- [Claude Code CLI](https://claude.ai/code) installed and logged in (`claude login`)
-- No Anthropic API key needed — uses your claude.ai subscription
-
----
-
-## Setup
+## Quick Start
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/Tanishq162006/stratengine.git
 cd stratengine
 
-# 2. Install dependencies (globally recommended)
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
 
-# 3. Log into Claude Code (one-time)
-claude login
-
-# 4. Bootstrap the knowledge base (crawl + extract + index)
-python run.py bootstrap
+# Either set an Anthropic API key or use Claude Code CLI.
+cp .env.example .env
+pytest -q
+python run.py --help
 ```
 
-The bootstrap step fetches ~100 articles from QuantStart, arXiv, Quantpedia, and other quant sources, extracts them into Strategy Cards, and indexes them into SQLite + ChromaDB. This takes about 10–15 minutes and requires internet access.
+LLM calls use `ANTHROPIC_API_KEY` when present. If no API key is configured, StratEngine can fall back to the local Claude Code CLI when `claude` is installed and authenticated.
 
----
+## CLI Examples
 
-## Usage
-
-### Zero-touch: prompt to algorithm
+Generate IMC Prosperity candidates:
 
 ```bash
 python run.py play \
-  --prompt "Round 1: INTARIAN_PEPPER_ROOT stable value market making, ASH_COATED_OSMIUM Bollinger mean-reversion" \
-  --template imc_prosperity
+  --template imc_prosperity \
+  --prompt "Round 1 market making with inventory skew and volatility-aware fair value"
 ```
 
-Output: `memory/candidates/<timestamp>_cand_00.py` through `_cand_04.py`
-
-The critic scores each candidate. Files marked `accept` in the run log are the best picks. Use them directly as your IMC Prosperity trader submission.
-
-### With backtesting
+Generate WorldQuant BRAIN alpha expressions:
 
 ```bash
-# Download price data first
-python run.py fetch-prices SPY,QQQ,TLT
-
-# Then play — will automatically evaluate each candidate
 python run.py play \
-  --prompt "momentum + mean reversion on SPY" \
-  --template quantconnect \
-  --data data/prices/SPY.csv
+  --template worldquant_iqc \
+  --prompt "short-horizon reversal amplified by volume and neutralized by subindustry"
 ```
 
-### Check the knowledge base
+Refine a tested BRAIN expression:
+
+```bash
+python run.py refine \
+  --expression "scale(group_neutralize(rank(ts_delta(close, 5)), subindustry))" \
+  --sharpe 1.04 \
+  --fitness 0.50 \
+  --sub-sharpe 0.35 \
+  --turnover 33.72
+```
+
+Inspect system health:
 
 ```bash
 python run.py dashboard
+python run.py source-report
+python run.py prompt-report
 ```
 
-### Step-by-step pipeline (advanced)
+Generated candidates and run outputs are written under `memory/` and are ignored by git.
+
+## Architecture
+
+```text
+prompt / round brief
+  -> context_builder      structured competition context
+  -> retriever            relevant strategy cards and knowledge
+  -> generator            candidate strategy designs and code
+  -> critic / scorer      review, rank, and filter
+  -> competition plugin   output validation or backtest adapter
+  -> memory/              local generated artifacts
+```
+
+Key directories:
+
+```text
+competitions/             Competition plugin registry and built-in plugins
+knowledge/                Curated strategy and competition knowledge packs
+prompts/                  Prompt templates for extraction, synthesis, code, review
+schema/                   Pydantic models for contexts and strategy cards
+templates/                Competition defaults and output conventions
+tests/                    Unit tests and CLI smoke coverage
+data/                     Local generated crawl/card data; git-ignored except .gitkeep
+memory/                   Local candidates, results, postmortems; git-ignored except .gitkeep
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `setup` | Interactive first-run setup |
+| `bootstrap` | Crawl, clean, extract, index, and optionally fetch prices |
+| `play` | Generate competition-ready candidates from a prompt |
+| `refine` | Improve a WorldQuant BRAIN expression from test metrics |
+| `round` | Run a full context-driven research round |
+| `report` | Produce a markdown strategy report |
+| `dashboard` | Show card counts, source quality, and prompt status |
+| `source-report` | Rank research sources by quality |
+| `prompt-report` | Summarize prompt template success rates |
+| `clusters` | Inspect strategy-card clusters |
+
+## Development
 
 ```bash
-python run.py crawl        # fetch raw HTML from seed URLs
-python run.py clean        # extract readable text
-python run.py extract      # convert articles → Strategy Cards via Claude
-python run.py index        # index cards into SQLite + ChromaDB
-python run.py dedup        # merge near-duplicate cards
+python -m pip install -e ".[dev]"
+pytest -q
+ruff check .
 ```
 
----
+Before committing, verify that `git status --short` does not show raw CSV data, generated candidates, copied submissions, local databases, cache folders, or private analysis notes.
 
-## IMC Prosperity 4 — Quick Start
+## Repository Hygiene
 
-Round 1 products: `INTARIAN_PEPPER_ROOT` (stable value, limit 80), `ASH_COATED_OSMIUM` (patterned, limit 80)
+This repo should contain reusable engine code, prompts, schemas, tests, templates, and curated non-private knowledge. It should not contain:
 
-```bash
-python run.py play \
-  --prompt "Round 1: INTARIAN_PEPPER_ROOT stable value market making with inventory skew, ASH_COATED_OSMIUM Bollinger z-score mean reversion with regime detection, maximize PnL" \
-  --template imc_prosperity
-```
+- IMC or other contest CSV datasets.
+- Round-specific trade logs or local backtest data.
+- Generated `best_v*.py` submissions.
+- Copied winner scripts or third-party private code.
+- SQLite/Chroma databases, prompt logs, caches, or `.DS_Store` files.
+- Private postmortems, feedback notes, or manual strategy dumps.
 
-The system knows:
-- Prosperity 4 product names, position limits, traderData 50k limit
-- Round 2 `bid()` MAF mechanics and Invest&Expand math
-- Avellaneda-Stoikov reservation price and optimal spread formulas
-- How to detect trending vs mean-reverting regimes
-- End-of-round inventory unwind urgency
-- Micro-price, order imbalance, informed flow detection
-
----
-
-## Project structure
-
-```
-stratengine/
-├── run.py                   # CLI entry point (all commands)
-├── knowledge/
-│   ├── imc_prosperity/      # Expert knowledge injected into every IMC LLM call
-│   │   ├── avellaneda_stoikov.md
-│   │   ├── fair_value_estimation.md
-│   │   ├── multi_product_strategy.md
-│   │   ├── order_book_reading.md
-│   │   ├── pattern_detection.md
-│   │   ├── round2_mechanics.md
-│   │   ├── state_and_sizing.md
-│   │   └── timing_and_urgency.md
-│   └── shared/              # General quant knowledge for all competitions
-│       ├── alpha_research.md
-│       ├── execution_and_risk.md
-│       ├── kelly_and_sizing.md
-│       └── market_microstructure.md
-├── competitions/
-│   └── imc_prosperity/      # IMC plugin (simulator + plugin interface)
-│       ├── plugin.py
-│       └── simulator.py
-├── schema/                  # Pydantic v2 models
-├── prompts/                 # All LLM prompt templates (.txt)
-├── templates/               # Competition config (products, rules, dates)
-├── sources/seeds.json       # Seed URLs for the crawler
-├── data/                    # raw/, clean/, cards/ — auto-generated
-└── memory/                  # Round results, candidates, postmortems
-```
-
----
-
-## Adding a new competition
-
-1. Create `competitions/<name>/plugin.py` implementing the `CompetitionPlugin` protocol
-2. Create `templates/<name>.json` with products, limits, and prompt instructions
-3. Create `knowledge/<name>/` with expert `.md` files for that competition
-4. Run `python run.py play --template <name> --prompt "..."`
-
----
-
-## Commands reference
-
-| Command | What it does |
-|---|---|
-| `bootstrap` | Full first-run setup: crawl + clean + extract + index + fetch prices |
-| `play` | Zero-touch: natural-language prompt → algorithm files |
-| `crawl` | Fetch raw HTML from all seed URLs |
-| `clean` | Extract readable text from raw HTML |
-| `extract` | Convert cleaned articles into Strategy Cards via Claude |
-| `index` | Index Strategy Cards into SQLite + ChromaDB |
-| `dedup` | Merge near-duplicate strategy cards |
-| `dashboard` | Full system status: card counts, source quality, prompt performance |
-| `fetch-prices` | Download free daily OHLCV from Stooq |
-| `clusters` | Print strategy cluster landscape |
-| `source-report` | Per-source quality scores |
-| `prompt-report` | Per-prompt template success rates |
-
----
-
-## Tech stack
-
-| Component | Library |
-|---|---|
-| LLM calls | Claude Code CLI (claude.ai subscription) |
-| Vector search | ChromaDB |
-| Metadata store | SQLite |
-| Backtesting | Backtrader |
-| Data models | Pydantic v2 |
-| CLI | Typer + Rich |
-| Web crawling | httpx + trafilatura |
-
----
+The `.gitignore` is set up to block these by default.
 
 ## License
 
-Private. Not for redistribution.
+Proprietary. Not for redistribution.

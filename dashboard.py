@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import sqlite3
 from collections import Counter
-from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table

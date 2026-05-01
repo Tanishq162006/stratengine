@@ -49,6 +49,12 @@ def load_plugin(competition_name: str) -> "CompetitionPlugin | None":
     return _REGISTRY.get(competition_name)
 
 
+def output_ext_for(competition_name: str) -> str:
+    """File extension for generated artifacts for a competition."""
+    plugin = load_plugin(competition_name)
+    return getattr(plugin, "output_ext", ".py") if plugin is not None else ".py"
+
+
 # Auto-register all built-in plugins at import time.
 def _auto_register() -> None:
     import importlib

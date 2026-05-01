@@ -8,7 +8,6 @@ import json
 import sqlite3
 import time
 from dataclasses import dataclass
-from pathlib import Path
 
 from config import PROMPTS_DIR, load_settings
 

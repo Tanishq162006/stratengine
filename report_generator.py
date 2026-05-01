@@ -49,7 +49,7 @@ def _render_algo_report(round_id: str, ctx: RoundContext, cards, result, scored_
                     f"{issue.get('explanation','')}"
                 )
     if scored_results is not None:
-        lines.append(f"\n## Ranked backtest results")
+        lines.append("\n## Ranked backtest results")
         lines.append("| Rank | Candidate | Score | Sharpe | MaxDD | Violations |")
         lines.append("|---:|---|---:|---:|---:|---|")
         for i, r in enumerate(scored_results):

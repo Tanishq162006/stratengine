@@ -1,5 +1,4 @@
 """Tests for knowledge_loader.py."""
-import pytest
 from pathlib import Path
 
 from knowledge_loader import build_prefix, load_knowledge
@@ -62,6 +61,20 @@ def test_build_prefix_no_addendum(tmp_path, monkeypatch):
     result = build_prefix("comp", prompt_addendum="")
     assert "Guide text." in result
     assert "Competition Instructions" not in result
+
+
+def test_load_knowledge_selects_relevant_docs(tmp_path, monkeypatch):
+    folder = tmp_path / "comp"
+    folder.mkdir()
+    (folder / "market_making.md").write_text("Inventory skew and order book logic.")
+    (folder / "momentum.md").write_text("Cross-sectional trend following.")
+
+    import knowledge_loader
+    monkeypatch.setattr(knowledge_loader, "KNOWLEDGE_DIR", tmp_path)
+
+    result = load_knowledge("comp", query_text="inventory skew market making", max_files=1)
+    assert "Inventory skew" in result
+    assert "trend following" not in result
 
 
 def test_real_imc_knowledge_files_exist():

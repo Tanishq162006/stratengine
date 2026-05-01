@@ -13,9 +13,9 @@ Your job: parse the user prompt and fill in the appropriate fields for EITHER a 
 ## RoundContext fields (algo mode):
 - competition: one of "imc_prosperity" | "worldquant_iqc" | "quantconnect" | "custom"
 - round_name: string (e.g. "Round 3", "Q1 2024 run") — REQUIRED, infer from prompt or set "Round 1"
-- asset_classes: list, values from ["equity", "crypto", "futures", "forex", "multi_asset", "fixed_income", "commodity", "options"]
+- asset_classes: list, values from ["equity", "etf", "crypto", "futures", "fx", "multi_asset", "fixed_income", "commodity", "options", "unknown"]
 - symbols: list of strings (specific tickers/products mentioned, e.g. ["KELP", "SQUID_INK"])
-- timeframe: one of "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1mo"
+- timeframe: one of "tick" | "second" | "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M" | "multi"
 - backtest_start: "YYYY-MM-DD"
 - backtest_end: "YYYY-MM-DD"
 - starting_capital: float
@@ -27,8 +27,8 @@ Your job: parse the user prompt and fill in the appropriate fields for EITHER a 
 - notes: string (any extra context from the prompt)
 
 ## TradingContext fields (manual mode):
-- asset_classes: list, values from ["equity", "crypto", "futures", "forex", "multi_asset", "fixed_income", "commodity", "options"] — REQUIRED
-- timeframe: one of "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1mo" — REQUIRED
+- asset_classes: list, values from ["equity", "etf", "crypto", "futures", "fx", "multi_asset", "fixed_income", "commodity", "options", "unknown"] — REQUIRED
+- timeframe: one of "tick" | "second" | "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" | "1M" | "multi" — REQUIRED
 - symbols: list of strings (e.g. ["SPY", "QQQ"])
 - trader_style: one of "intraday" | "swing" | "position" | "long_term_investor" | "macro" | "discretionary"
 - risk_tolerance: "low" | "medium" | "high"
