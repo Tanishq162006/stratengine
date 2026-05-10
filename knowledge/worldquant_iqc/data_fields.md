@@ -100,6 +100,75 @@ reporting cadence creates ~2-month NaN gaps that destroy universality.
 | `country` | per-region | needed for global universes |
 | `exchange` | NYSE/NASDAQ/etc | rarely needed |
 
+## Model Data Fundamentals (`mdf_*`)
+
+Proprietary BRAIN aggregations of fundamental data, denser than raw
+Compustat. Daily updated. Subscription required.
+
+| Field | Description |
+|---|---|
+| `mdf_oey` | Operating earnings yield |
+| `mdf_gry` | Growth rate × dividend yield composite |
+| `mdf_nps` | Net profit smoothness |
+| `mdf_pbk` | Price-to-book |
+
+## China Model Variants (`mdl175_*`, `mdl*_*`)
+
+China-specific model fields. Use with `group_rank` / `group_vector_neut`
+rather than global `rank` / `vector_neut` (China price-limit system makes
+global ranks misleading).
+
+| Field | Description |
+|---|---|
+| `mdl175_volatility` | Realized volatility (China) |
+| `mdl175_revenuettm` | Trailing-twelve-month revenue (China) |
+| `mdl175_02amvt` | Activity / amount-weighted measure (China) |
+
+## News (`nws*_*`) — vector-valued
+
+News-event arrays. **MUST** be reduced with `vec_avg`, `vec_sum`,
+`vec_max`, or `vec_min` before any scalar operator. After-hours news
+fields work well at delay 0 because the price jump shows up next
+session.
+
+| Field | Description |
+|---|---|
+| `nws12_afterhsz_sl` | After-hours news sentiment level |
+| `nws12_afterhsz_s1` | After-hours news primary signal vector |
+| `nws12_afterhsz_maxupamt` | Max upgrade amount per article (after-hours) |
+
+## Sentiment (`snt_*`) and Social (`scl*_*`)
+
+| Field | Description |
+|---|---|
+| `snt_buzz_ret` | Buzz-magnitude predicted return |
+| `scl12_alltype_buzzvec` | Vector of social-buzz aggregates (use `vec_sum`) |
+
+## Options (`implied_volatility_*`, `pcr_*`, `*_breakeven_*`)
+
+| Field | Description |
+|---|---|
+| `implied_volatility_call_60` / `implied_volatility_call_720` | Call IV at 60d / 720d |
+| `implied_volatility_put_60` / `implied_volatility_put_720` | Put IV at 60d / 720d |
+| `pcr_vol_10` | 10-day put/call volume ratio |
+| `call_breakeven_10` / `put_breakeven_10` | 10d call / put breakeven price |
+
+## PV-Grouping Models (`pv*_*`)
+
+Pre-built risk-factor grouping signals. Useful in
+`group_neutralize(..., densify(pv13_r2_min20_3000_sector))`-style
+chains.
+
+| Field | Description |
+|---|---|
+| `pv13_r2_min20_3000_sector` | PV13 model, R²-clustered, min-20-members, TOP3000, sector-level |
+
+## Derived helpers (constructable)
+
+| Name | Formula |
+|---|---|
+| `rel_ret_comp` | Relative-return composite vs benchmark (use in geometric-mean composites) |
+
 ## Named Alternative Data Fields (availability varies by subscription)
 
 | Field | Description |

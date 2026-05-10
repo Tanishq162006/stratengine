@@ -100,6 +100,15 @@ submission.
 | `if(cond, a, b)` | a where cond > 0, else b |
 | `trade_when(cond, a, b)` | conditional trading signal |
 
+## Vector / Risk-Factor Operators (advanced)
+
+| Operator | Description |
+|---|---|
+| `vector_neut(a, b)` | Orthogonalize `a` against `b`: returns `a - (a·b̂)b̂`. Use to neutralize an alpha against a risk factor (e.g. cap, momentum). |
+| `group_vector_neut(a, b, g)` | Same as `vector_neut(a, b)` but applied within group `g`. Standard tool in China universes. |
+| `keep(x)` | Hold `x`'s value across days (combine with `trade_when` to lower turnover). |
+| `vec_avg(x)` / `vec_sum(x)` / `vec_max(x)` / `vec_min(x)` | REQUIRED reduction over a vector-valued field (e.g. `nws*_*`, `scl*_*`, `*_vec`). Forgetting this fails compilation. |
+
 ## Specialty / Conditional Operators
 
 | Operator | Description |

@@ -46,7 +46,7 @@ _KNOWN_OPERATORS = {
     "relu", "neg", "abs", "log", "sqrt", "min", "max", "sign",
     "pow", "pow_sign", "round", "add", "minus", "cwise_mul", "div",
     "greater", "less", "normed_rank_diff", "if", "if_else", "trade_when",
-    "nan_mask",
+    "nan_mask", "keep",
 }
 
 _KNOWN_FIELDS = {
@@ -65,7 +65,39 @@ _KNOWN_FIELDS = {
     "analyst_rating", "target_price", "revisions_up", "revisions_down",
     # Group keys
     "market", "sector", "industry", "subindustry", "country", "exchange",
+    # Derived helpers commonly used in seminar examples
+    "rel_ret_comp",
 }
+
+# Field-family prefixes that BRAIN exposes through subscribed datasets.
+# Match-by-prefix so we don't false-positive on legit fields the catalog
+# doesn't enumerate (model fundamentals, news vectors, sentiment, options,
+# PV-grouping models, etc.). These are genuine BRAIN dataset families
+# documented in the WQ seminar materials.
+_KNOWN_FIELD_PREFIXES = (
+    "mdf_",        # Model Data Fundamentals (mdf_oey, mdf_gry, mdf_nps, mdf_pbk, ...)
+    "mdl",         # China model variants (mdl175_volatility, mdl175_revenuettm, ...)
+    "nws",         # News (nws12_afterhsz_sl, nws12_afterhsz_maxupamt, ...)
+    "snt_",        # Sentiment (snt_buzz_ret, ...)
+    "scl",         # Social/buzz (scl12_alltype_buzzvec, ...)
+    "pcr_",        # Put/Call ratios (pcr_vol_10, ...)
+    "pv",          # PV grouping models (pv13_r2_min20_3000_sector, ...)
+    "implied_volatility",  # implied_volatility_call_60, implied_volatility_put_720, ...
+    "call_breakeven",
+    "put_breakeven",
+    "fnd",         # already covered by enumerated fnd1..fnd28 but keep prefix as fallback
+    "eps_",
+    "sales_",
+    "analyst_",
+    "target_",
+    "revisions_",
+)
+
+
+def _is_known_field(ident: str) -> bool:
+    if ident in _KNOWN_FIELDS:
+        return True
+    return any(ident.startswith(p) for p in _KNOWN_FIELD_PREFIXES)
 
 _PYTHON_PATTERNS = ["def ", "class ", "import ", "from ", "print(", "return ", "__"]
 
@@ -183,14 +215,7 @@ def _validate(code: str) -> list[str]:
         and t not in {"True", "False", "None", "and", "or", "not", "if", "else"}
     ]
     for ident in sorted(set(bare_ids)):
-        # Heuristic: only flag identifiers that look like field references
-        # (lowercase, no embedded dots) — variables shouldn't exist anyway
-        # because we already error on assignment.
-        if not ident.islower() or "_" in ident and ident not in _KNOWN_FIELDS:
-            # multi-word ones like fnd13 are fine if known
-            if ident in _KNOWN_FIELDS:
-                continue
-        if ident in _KNOWN_FIELDS:
+        if _is_known_field(ident):
             continue
         # Skip purely numeric or constant-style.
         if re.fullmatch(r"[A-Z_]+", ident) or len(ident) <= 1:
