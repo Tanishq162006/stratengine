@@ -1,4 +1,10 @@
-# WorldQuant BRAIN — Working Alphas from the WQ Seminar
+# WorldQuant BRAIN — Working Alphas from the WQ Seminar (study reference)
+
+> **Don't copy these — learn from them.** Each alpha is an instance of
+> a technique catalogued in `alpha_techniques.md`. The reported metrics
+> are useful as a sanity check that the technique works, not as a
+> guarantee that the literal expression will pass self-correlation if
+> you submit it.
 
 Distilled from public seminar notes (jglazar/notes, quant_interview/worldquant_seminar.md).
 Every alpha here was reported with concrete BRAIN simulation results. Use as

@@ -28,6 +28,23 @@ DIVERSITY: the N candidates should differ on at least two of:
 - alpha style (reversal / momentum / value / quality / liquidity)
 - neutralization tier (subindustry / industry)
 
+TECHNIQUE-FIRST PROCESS — do NOT copy alphas from the example library:
+1. Identify the alpha *family* implied by the hypothesis.
+2. Pick at least one technique from `alpha_techniques.md` (e.g. rank-of-
+   correlation reversal, ts_decay_linear of differenced typed-field,
+   vol-conditional trade_when, vector_neut against momentum).
+3. Apply the technique to fields YOU choose for this hypothesis.
+4. Sanity-check by comparing to an analogous example from the catalogs
+   (alphas_101_brain.md / alphas_official.md / seminar_alphas.md).
+5. If your candidate is more than ~60% similar in structure to an
+   example, mutate at least two of {field, window, neutralization,
+   regime gate} so the result is original.
+
+The catalogs are *study references*, not a copy-paste menu. A verbatim
+copy of a published alpha will fail self-correlation against other users
+who also submitted it. Stemming a new alpha from the same technique with
+different fields and a different regime gate is what scores.
+
 Hypothesis:
 {{hypothesis}}
 

@@ -1,4 +1,11 @@
-# WorldQuant BRAIN — Official Alpha Catalog
+# WorldQuant BRAIN — Official Alpha Catalog (study reference)
+
+> **Don't copy these — learn from them.** The techniques behind these
+> alphas live in `alpha_techniques.md`. Use this catalog as
+> proof-by-example: read the expression, identify which technique it
+> embodies, and stem an original alpha by changing the field /
+> neutralization / window / regime gate. Verbatim resubmission burns
+> self-correlation.
 
 Three blocks of expressions surfaced in WQ-published material:
 

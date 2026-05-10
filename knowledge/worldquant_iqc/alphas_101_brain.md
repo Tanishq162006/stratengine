@@ -1,4 +1,10 @@
-# 101 Formulaic Alphas — BRAIN Fast-Expression Syntax
+# 101 Formulaic Alphas — BRAIN Fast-Expression Syntax (study reference)
+
+> **Don't copy these — learn from them.** Read `alpha_techniques.md`
+> first. Each alpha here is one *example* of one or two techniques;
+> the techniques are the transferable knowledge. Synth/refine should
+> stem original alphas from the techniques and only consult this list
+> as proof-by-example.
 
 Direct-paste-able versions of the Kakushadze 101 alphas already translated
 into BRAIN's Fast Expression language. Original syntax (`stddev`,
