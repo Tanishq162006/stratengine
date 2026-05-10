@@ -91,6 +91,21 @@ CANONICAL PIPELINE (always apply, written as ONE nested expression):
     5. group_neutralize(..., subindustry)  — remove sector beta, ensures Sub-universe Sharpe
     6. scale(...)                          — final output, sum(|w|)==1
 
+PRE-OUTPUT SELF-CHECK (you MUST mentally walk through this before emitting;
+the local validator will reject the expression and force a re-do otherwise):
+  [ ] Outermost call is scale(...)
+  [ ] Inside scale is group_neutralize(..., subindustry)  (or industry if subindustry too sparse)
+  [ ] Cross-sectional step uses zscore — not rank — so Fitness can clear 1.0
+  [ ] Every winsorize(...) has EXACTLY one argument
+  [ ] No bare integer added to typed field (volume + 1 → forbidden; use a ratio)
+  [ ] Every divisor that could be zero has + 0.0001 offset
+  [ ] Every operator and field name appears in the lists above (no inventions)
+  [ ] Expression is ONE nested line — no =, no semicolons, no Python keywords
+  [ ] Likely to satisfy all 8 BRAIN gates: Sharpe>1.25, Turnover 1-70%, Fitness>1.0,
+      Sub-Sharpe>0.45, weight distributed, self-corr clean, competitions match, syntax clean
+  If ANY box would be unchecked, repair the expression first. Only emit a
+  pipeline you can defend on every gate.
+
 INPUT
 -----
 RoundContext:

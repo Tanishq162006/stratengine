@@ -182,6 +182,79 @@
         "https://raw.githubusercontent.com/terryluzijian/imc-prosperity-3/main/README.md",
         "https://raw.githubusercontent.com/picktim/imc-prosperity/main/README.md"
       ]
+    },
+    {
+      "name": "GitHub — WorldQuant BRAIN community docs",
+      "base_url": "https://raw.githubusercontent.com",
+      "sitemap_url": null,
+      "include_patterns": [],
+      "robots_url": null,
+      "seed_urls": [
+        "https://raw.githubusercontent.com/we-can-not-find-public-WQ-docs/placeholder/main/README.md"
+      ],
+      "notes": "WorldQuant BRAIN's official support pages (support.worldquantbrain.com) require login and return 403 to anonymous crawlers. Operator catalog must be maintained from inside the BRAIN IDE — see knowledge/worldquant_iqc/brain_operators.md and wq_standard.md. This source entry is a placeholder; populate seed_urls with any publicly-mirrored BRAIN docs you find."
+    },
+    {
+      "name": "WorldQuant Insights",
+      "base_url": "https://www.worldquant.com",
+      "sitemap_url": "https://www.worldquant.com/sitemap.xml",
+      "include_patterns": ["/insights/", "/ideas/"],
+      "robots_url": "https://www.worldquant.com/robots.txt",
+      "seed_urls": [
+        "https://www.worldquant.com/ideas/"
+      ]
+    },
+    {
+      "name": "arXiv — LLM-Driven Alpha Mining (Alpha-GPT family)",
+      "base_url": "https://arxiv.org",
+      "sitemap_url": null,
+      "include_patterns": ["/abs/"],
+      "robots_url": "https://arxiv.org/robots.txt",
+      "seed_urls": [
+        "https://arxiv.org/abs/2308.00016",
+        "https://arxiv.org/abs/2402.16823",
+        "https://arxiv.org/abs/2305.16380",
+        "https://arxiv.org/abs/2306.06031",
+        "https://arxiv.org/abs/2403.06465"
+      ]
+    },
+    {
+      "name": "QuantConnect Docs (v2)",
+      "base_url": "https://www.quantconnect.com",
+      "sitemap_url": "https://www.quantconnect.com/sitemap.xml",
+      "include_patterns": ["/docs/v2/"],
+      "robots_url": "https://www.quantconnect.com/robots.txt",
+      "seed_urls": [
+        "https://www.quantconnect.com/docs/v2/writing-algorithms",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/initialization",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/key-concepts/event-handlers",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/securities/asset-classes/us-equity",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/indicators/supported-indicators",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/portfolio/portfolio-construction",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/trading-and-orders/order-types",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/trading-and-orders/order-properties",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/scheduled-events",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/historical-data/history-requests",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/universes/equity",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/transaction-fees",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/slippage",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/risk-management",
+        "https://www.quantconnect.com/docs/v2/writing-algorithms/object-store"
+      ]
+    },
+    {
+      "name": "GitHub — LEAN (QuantConnect engine)",
+      "base_url": "https://raw.githubusercontent.com",
+      "sitemap_url": null,
+      "include_patterns": [],
+      "robots_url": null,
+      "seed_urls": [
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Algorithm.Python/BasicTemplateAlgorithm.py",
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Algorithm.Python/MovingAverageCrossAlgorithm.py",
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Algorithm.Python/IndicatorWarmupAlgorithm.py",
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Algorithm.Python/EmaCrossUniverseSelectionAlgorithm.py",
+        "https://raw.githubusercontent.com/QuantConnect/Lean/master/Algorithm.Python/HistoryAlgorithm.py"
+      ]
     }
   ]
 }

@@ -9,9 +9,17 @@ A strong hypothesis must:
 3. Be clearly expressible as a BRAIN DSL operator expression
 4. Specify what market conditions favour it (regime awareness)
 
-All 8 BRAIN submission criteria must be satisfied:
-  Sharpe > 1.25 | Turnover 1-70% | Weight distributed | Fitness > 1.0
-  Sub-universe Sharpe > 0.45 | Self-correlation pass | Competitions match
+All 8 BRAIN submission criteria must be satisfied — every candidate you
+propose must be defensible on EACH gate before it leaves this step:
+  1. Sharpe > 1.25
+  2. Turnover > 1%
+  3. Turnover < 70%
+  4. Weight well distributed (group_neutralize + scale)
+  5. Competitions match (Challenge / IQC 2026 Stage 1)
+  6. Fitness > 1.0 (use zscore, not rank, at cross-sectional step)
+  7. Sub-universe Sharpe > 0.45 (group_neutralize subindustry + universal fields)
+  8. Self-correlation < 0.7 vs prior submissions (vary field families)
+If a candidate cannot defend a gate, drop it — do not pad the output.
 
 ## Trading Ideas
 {{round_context_json}}

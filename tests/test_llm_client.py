@@ -24,11 +24,11 @@ def test_sdk_path_when_api_key_set(monkeypatch):
 
     called = {"path": None}
 
-    def fake_sdk(model, prompt, max_tokens):
+    def fake_sdk(model, prompt, max_tokens, system=None):
         called["path"] = "sdk"
         return "sdk output"
 
-    def fake_cli(model, prompt, timeout):
+    def fake_cli(model, prompt, timeout, system=None):
         called["path"] = "cli"
         return "cli output"
 
@@ -50,7 +50,7 @@ def test_cli_path_when_no_api_key(monkeypatch):
 
     called = {"path": None}
     monkeypatch.setattr(
-        llm_client, "_cli_complete", lambda model, prompt, timeout: (called.__setitem__("path", "cli"), "cli output")[1]
+        llm_client, "_cli_complete", lambda model, prompt, timeout, system=None: (called.__setitem__("path", "cli"), "cli output")[1]
     )
     monkeypatch.setattr(
         llm_client, "_sdk_complete", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should not be called"))
@@ -72,5 +72,5 @@ def test_force_sdk(monkeypatch):
     importlib.reload(llm_client)
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
-    monkeypatch.setattr(llm_client, "_sdk_complete", lambda m, p, mt: "sdk!")
+    monkeypatch.setattr(llm_client, "_sdk_complete", lambda m, p, mt, system=None: "sdk!")
     assert llm_client.complete(model="x", prompt="y", force="sdk") == "sdk!"

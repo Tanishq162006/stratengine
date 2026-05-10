@@ -35,6 +35,18 @@ HARD RULES (same as always):
 - No unit mismatches: volume/ts_mean(volume,d) ✓ but volume/(ts_mean(volume,d)+1) ✗
 - Use zscore (not rank) at cross-sectional step when Fitness is failing
 
+PRE-OUTPUT SELF-CHECK (each mutation must clear ALL 8 BRAIN gates and the
+syntax invariants — local validator will reject otherwise):
+  [ ] Outermost call is scale(...)
+  [ ] Inside scale is group_neutralize(..., subindustry) (or industry if sparse)
+  [ ] Cross-sectional step uses zscore (not rank) when Fitness needs to clear 1.0
+  [ ] Every winsorize(...) has EXACTLY one argument
+  [ ] No bare integer added to typed fields (volume, close, vwap, cap, adv20, sharesout)
+  [ ] Every divisor offset by + 0.0001
+  [ ] Every operator and field is in the BRAIN catalog (no inventions)
+  [ ] One nested line, no =, no semicolons, no Python
+  [ ] Plausibly clears: Sharpe>1.25, Turnover 1-70%, Fitness>1.0, Sub-Sharpe>0.45
+
 ## Trading Ideas
 Current expression: {{current_expression}}
 

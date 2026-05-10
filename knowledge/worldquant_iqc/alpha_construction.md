@@ -65,9 +65,10 @@ alpha  = scale(alpha)
 
 ## Turnover management
 
-BRAIN flags alphas with:
-- Turnover < 3% (too static — effectively a buy-and-hold)
-- Turnover > 60% (too costly — fees eat alpha)
+BRAIN's IQC 2026 submission gate (see `wq_standard.md`):
+- Turnover < 1%  → reject (too static — effectively a buy-and-hold)
+- Turnover > 70% → reject (too costly — fees eat alpha)
+Practical sweet spot: 5–40% for most signals.
 
 To reduce turnover: increase smoothing window (`ts_mean(x, 10)` vs `ts_mean(x, 2)`).
 To increase turnover: use `delta(x, 1)` (1-day change) instead of level.

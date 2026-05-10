@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -764,6 +765,189 @@ def play_cmd(
 
     else:
         raise typer.BadParameter("mode must be 'algo' or 'manual'")
+
+
+@app.command("wq-check")
+def wq_check_cmd(
+    expression: Optional[str] = typer.Argument(
+        None, help="BRAIN expression as a string. Use --file to read from a file."
+    ),
+    file: Optional[Path] = typer.Option(
+        None, "--file", "-f", help="Read the expression from a file (.txt)."
+    ),
+    history: Path = typer.Option(
+        Path("knowledge/worldquant_iqc/alpha_history.md"),
+        help="Path to alpha_history.md for self-correlation pre-check.",
+    ),
+) -> None:
+    """Pre-flight a BRAIN alpha expression locally before pasting to BRAIN.
+
+    Runs the WorldQuant BRAIN syntax validator + a token-level self-correlation
+    heuristic against alpha_history.md. Prints any blockers, warnings, and
+    near-duplicate prior submissions so you can repair the expression locally
+    instead of burning a BRAIN submission slot.
+    """
+    if file is not None:
+        if not file.exists():
+            raise typer.BadParameter(f"file not found: {file}")
+        text = file.read_text(encoding="utf-8")
+    elif expression is not None:
+        text = expression
+    else:
+        raise typer.BadParameter("Provide an expression argument or --file path.")
+
+    expr = text.strip()
+    if not expr:
+        console.print("[red]ERROR:[/] empty expression.")
+        raise typer.Exit(code=2)
+
+    plugin = competitions.load_plugin("worldquant_iqc")
+    if plugin is None:
+        console.print("[red]ERROR:[/] worldquant_iqc plugin not loaded.")
+        raise typer.Exit(code=2)
+
+    # Re-use the plugin's _validate so wq-check stays consistent with what
+    # the synthesis pipeline uses.
+    from competitions.worldquant_iqc.plugin import _validate  # type: ignore
+
+    warnings = _validate(expr)
+    blockers = [w for w in warnings if w.startswith("ERROR")]
+    advisories = [w for w in warnings if not w.startswith("ERROR")]
+
+    console.print("\n[bold]Expression preview[/]")
+    preview = expr.replace("\n", " ")
+    console.print(f"  {preview[:200]}{'…' if len(preview) > 200 else ''}")
+
+    if blockers:
+        console.print(f"\n[bold red]Blockers ({len(blockers)})[/] — fix before submitting:")
+        for w in blockers:
+            console.print(f"  • {w}")
+    else:
+        console.print("\n[bold green]Syntax: clean[/] — no blocker issues.")
+
+    if advisories:
+        console.print(f"\n[bold yellow]Advisories ({len(advisories)})[/]")
+        for w in advisories:
+            console.print(f"  • {w}")
+
+    # Self-correlation pre-check against prior submissions in alpha_history.md.
+    near = _self_correlation_candidates(expr, history)
+    if near:
+        console.print(
+            f"\n[bold yellow]Self-correlation risk ({len(near)} prior submissions)[/]"
+        )
+        for sim, name, snippet in near:
+            console.print(f"  • [bold]{sim:.0%}[/] overlap with {name}")
+            console.print(f"      {snippet}")
+    else:
+        console.print("\n[bold green]Self-correlation: looks novel[/] vs alpha_history.md.")
+
+    console.print("\n[dim]Gate reminder: Sharpe>1.25 | Turnover 1-70% | Fitness>1.0 | "
+                  "Sub-Sharpe>0.45 | Weight distributed | Self-corr<0.7 | "
+                  "Competitions match | Syntax clean[/]")
+
+    raise typer.Exit(code=1 if blockers else 0)
+
+
+def _self_correlation_candidates(
+    expr: str, history_path: Path
+) -> list[tuple[float, str, str]]:
+    """Return prior submissions whose token signature overlaps >= 50% with expr."""
+    if not history_path.exists():
+        return []
+    import re
+
+    def tokens(s: str) -> set[str]:
+        return {
+            t for t in re.findall(r"[a-z_][a-z0-9_]*", s.lower())
+            if len(t) > 2 and not t.isdigit()
+        }
+
+    expr_tokens = tokens(expr)
+    if not expr_tokens:
+        return []
+
+    text = history_path.read_text(encoding="utf-8")
+    sections = re.split(r"\n###\s+", text)
+    matches: list[tuple[float, str, str]] = []
+    for section in sections[1:]:
+        head, *_ = section.split("\n", 1)
+        name = head.strip()
+        m = re.search(r"```\s*\n(.*?)\n```", section, re.DOTALL)
+        if not m:
+            continue
+        prior_expr = m.group(1).strip()
+        prior_tokens = tokens(prior_expr)
+        if not prior_tokens:
+            continue
+        union = expr_tokens | prior_tokens
+        inter = expr_tokens & prior_tokens
+        sim = len(inter) / len(union) if union else 0.0
+        if sim >= 0.5:
+            matches.append((sim, name, prior_expr[:120].replace("\n", " ")))
+    matches.sort(reverse=True)
+    return matches
+
+
+@app.command("alpha-gpt")
+def alpha_gpt_cmd(
+    prompt: str = typer.Option(..., "--prompt", "-p", help="Trader hypothesis (free-text)."),
+    rounds: int = typer.Option(3, help="Refinement rounds after seeding."),
+    n_seed: int = typer.Option(5, help="How many seed candidates to ask the LLM for."),
+    beam: int = typer.Option(3, help="Beam width — top-N kept between rounds."),
+    mutations_per_parent: int = typer.Option(3, help="Mutations to ask for per surviving parent."),
+    backend: Optional[str] = typer.Option(
+        None,
+        help="Force LLM backend: claude_sdk | claude_cli | openai_sdk | codex_cli. "
+             "Default honors STRATENGINE_LLM_BACKEND or auto-resolves.",
+    ),
+    out: Optional[Path] = typer.Option(None, help="Write the full LoopResult JSON here."),
+) -> None:
+    """Autonomous Alpha-GPT loop for WorldQuant BRAIN.
+
+    Seeds N candidates from your hypothesis, then iteratively mutates the
+    surviving best on every round using the local BRAIN syntax validator
+    and self-correlation pre-check as the fitness signal. Final output is
+    a small ranked list of distinct, syntactically-clean candidates ready
+    for you to paste into the BRAIN IDE.
+
+    Backend is pluggable: Claude CLI by default if you have `claude` on
+    PATH; switch to Codex via `--backend codex_cli` or
+    `STRATENGINE_LLM_BACKEND=codex_cli` if you prefer the OpenAI codex CLI.
+    """
+    import alpha_gpt
+
+    if backend:
+        os.environ["STRATENGINE_LLM_BACKEND"] = backend
+
+    console.print(f"[bold cyan]Alpha-GPT loop[/] · rounds={rounds} · beam={beam} · seeds={n_seed}")
+    console.print(f"[dim]backend = {os.environ.get('STRATENGINE_LLM_BACKEND', 'auto')}[/]")
+    res = alpha_gpt.run_loop(
+        hypothesis=prompt,
+        rounds=rounds,
+        n_seed=n_seed,
+        beam=beam,
+        mutations_per_parent=mutations_per_parent,
+    )
+
+    console.print(f"\n[bold green]Final {len(res.final)} candidates[/] (after {rounds} rounds)\n")
+    for i, c in enumerate(res.final, 1):
+        console.print(f"[bold]{i}. {c.name}[/]  score={c.score:.2f}  expr_id={c.expr_id}")
+        console.print(f"   thesis: {c.thesis}")
+        console.print(f"   expr  : {c.expression[:160]}{'…' if len(c.expression) > 160 else ''}")
+        console.print(f"   config: {c.config}")
+        if c.blockers:
+            console.print(f"   [red]blockers[/]: {len(c.blockers)} — re-run or fix manually")
+        if c.self_corr:
+            top = c.self_corr[0]
+            console.print(f"   [yellow]self-corr[/]: {top[0]:.0%} vs {top[1]}")
+        console.print("")
+
+    if out:
+        import alpha_gpt as _ag
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(_ag.serialize_result(res), indent=2))
+        console.print(f"[dim]Full history → {out}[/]")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,52 @@
+You are an alpha researcher for WorldQuant BRAIN running an autonomous
+mining loop (Alpha-GPT style). Convert the trader's hypothesis into N
+diverse, defensible BRAIN expressions. Each must be defendable on all 8
+BRAIN submission gates:
+
+  1. Sharpe > 1.25
+  2. Turnover > 1%
+  3. Turnover < 70%
+  4. Weight well distributed (group_neutralize + scale)
+  5. Competitions match (Challenge / IQC 2026 Stage 1)
+  6. Fitness > 1.0  (use zscore, not rank, at the cross-sectional step)
+  7. Sub-universe Sharpe > 0.45 (use group_neutralize subindustry; prefer universal fields)
+  8. Self-correlation < 0.7 vs prior submissions (vary field families)
+
+HARD SYNTAX RULES (the local validator will reject otherwise):
+- Single nested expression. NO `=`, NO semicolons, NO Python.
+- Outermost call MUST be `scale(...)`.
+- Inside `scale` MUST be `group_neutralize(..., subindustry)` (or `industry` if subindustry too sparse).
+- Cross-sectional step uses `zscore` (not `rank`) when Fitness must clear 1.0.
+- `winsorize(x)` takes EXACTLY one argument.
+- No bare integer added to typed fields (`volume + 1` ❌). Use a ratio.
+- Every divisor that could be zero must be `+ 0.0001` offset.
+- Use only operators and fields from the supplied catalog.
+
+DIVERSITY: the N candidates should differ on at least two of:
+- field family (price-volume / fundamental / liquidity / volatility)
+- holding horizon (1-5d / 10-30d / 60-252d)
+- alpha style (reversal / momentum / value / quality / liquidity)
+- neutralization tier (subindustry / industry)
+
+Hypothesis:
+{{hypothesis}}
+
+Prior submissions to avoid (self-correlation candidates):
+{{prior_alphas}}
+
+Output a SINGLE JSON object:
+{
+  "candidates": [
+    {
+      "name": "<short_snake_case>",
+      "thesis": "<one sentence: what edge, why it persists>",
+      "fields_used": ["..."],
+      "horizon_days": <int>,
+      "expression": "<single nested BRAIN DSL expression — outermost is scale(group_neutralize(...))>",
+      "config": {"decay": <int 3-12>, "delay": 1, "truncation": 0.08, "neutralization": "subindustry", "universe": "TOP3000", "region": "USA"},
+      "why_8_gates_clear": "<one sentence per gate at most: Sharpe / Turnover / Fitness / Sub-Sharpe / Self-corr / Syntax>"
+    }
+  ]
+}
+
+Generate exactly {{n_candidates}} candidates.

@@ -35,6 +35,71 @@ Use ts_backfill(x, 90) to forward-fill quarterly fundamental fields.
 | `sharesout` | Shares outstanding | dilution signal |
 | `fnd13` | Book value per share | P/B: `cap / (fnd13 * sharesout + 1)` |
 
+## Compustat fnd1..fnd28 Reference (subscription-dependent)
+
+Compustat fundamental fields exposed in BRAIN follow the `fndN` naming
+convention. Verify subscription in the BRAIN IDE before depending on a field.
+The most commonly used subset:
+
+| Field | Item | Typical use |
+|---|---|---|
+| `fnd1`  | Cash and short-term investments | liquidity ratio |
+| `fnd2`  | Receivables | working capital |
+| `fnd3`  | Inventories | inventory turn |
+| `fnd4`  | Current assets | quick ratio numerator |
+| `fnd5`  | Current liabilities | quick ratio denominator |
+| `fnd6`  | Total assets (alias of `assets`) | size proxy |
+| `fnd7`  | Property/plant/equipment net | capex proxy |
+| `fnd8`  | Long-term debt | leverage |
+| `fnd9`  | Total liabilities | leverage / size |
+| `fnd10` | Common equity | book value |
+| `fnd11` | Sales (alias of `sales`) | growth |
+| `fnd12` | Cost of goods sold | gross margin: `(sales - fnd12) / sales` |
+| `fnd13` | Book value per share | P/B numerator (per-share form) |
+| `fnd14` | Earnings per share | E/P |
+| `fnd15` | Dividends per share | yield |
+| `fnd16` | Operating income before depreciation | operating margin |
+| `fnd17` | Net income | profitability |
+| `fnd18` | Cash flow from operations | quality |
+| `fnd19` | Capital expenditures | capex / sales |
+| `fnd20` | R&D expense | innovation factor |
+| `fnd21` | Goodwill | quality red flag |
+| `fnd22` | Intangibles total | quality red flag |
+| `fnd23` | Accounts payable | working capital |
+| `fnd24` | Selling, general & admin | operating efficiency |
+| `fnd25` | Tax expense | effective rate proxy |
+| `fnd26` | Depreciation & amortization | EBITDA reconstruction |
+| `fnd27` | Interest expense | leverage burden |
+| `fnd28` | Pretax income | tax rate proxy |
+
+All `fndN` fields require `ts_backfill(x, 120)` before use — quarterly
+reporting cadence creates ~2-month NaN gaps that destroy universality.
+
+## IBES / Estimates Fields (subscription-dependent)
+
+| Field | Description |
+|---|---|
+| `eps_est_curr_qtr` | Mean analyst EPS estimate, current quarter |
+| `eps_est_curr_yr`  | Mean analyst EPS estimate, current year |
+| `eps_est_next_yr`  | Mean analyst EPS estimate, next year |
+| `sales_est_curr_qtr` | Mean analyst sales estimate, current quarter |
+| `eps_actual` | Actual reported EPS |
+| `eps_surprise` | Reported minus consensus |
+| `analyst_rating` | Mean analyst rating (1=strong buy ... 5=strong sell) |
+| `target_price` | Mean analyst price target |
+| `revisions_up` / `revisions_down` | Estimate revisions in last 30 days |
+
+## Group / Classification Fields (use as `g` in group operators)
+
+| Field | Granularity | Notes |
+|---|---|---|
+| `market` | global | rarely used — too broad |
+| `sector` | ~11 buckets | use when subindustry is too sparse |
+| `industry` | ~25 buckets | mid-granularity neutralization |
+| `subindustry` | ~158 buckets | DEFAULT — use for `group_neutralize` |
+| `country` | per-region | needed for global universes |
+| `exchange` | NYSE/NASDAQ/etc | rarely needed |
+
 ## Named Alternative Data Fields (availability varies by subscription)
 
 | Field | Description |

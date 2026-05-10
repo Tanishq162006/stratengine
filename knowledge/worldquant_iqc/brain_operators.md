@@ -100,6 +100,29 @@ submission.
 | `if(cond, a, b)` | a where cond > 0, else b |
 | `trade_when(cond, a, b)` | conditional trading signal |
 
+## Specialty / Conditional Operators
+
+| Operator | Description |
+|---|---|
+| `pasteurize(x)` | replace NaN with 0 — use sparingly; usually `ts_backfill` is safer |
+| `densify(x)` | densify a sparse signal so more rows are non-NaN |
+| `humpdecay(x, p)` / `hump(x, p)` | decay-style smoothing controlled by hump parameter p |
+| `jump_decay(x, d, n)` | reset decay window when the signal jumps by > n stddevs |
+| `last_diff_value(x, d)` | last value of x that changed within d days |
+| `convert_unit(x, "rate")` | unit-convert (e.g. count → rate per share) |
+| `ts_returns(x, d)` | simple return: (x - ts_delay(x,d)) / ts_delay(x,d) |
+| `ts_step(d)` | linearly-increasing 1..d window (used for weighting) |
+| `ts_partial_corr(y, x, z, d)` | partial correlation of y on x, controlling for z |
+| `ts_kendall(x, y, d)` | rolling Kendall rank correlation |
+| `ts_co_skewness(x, y, d)` / `ts_co_kurtosis(x, y, d)` | rolling co-moments |
+| `ts_quantile(x, q, d)` | rolling q-th quantile (alias of ts_percentile) |
+| `ts_av_diff(x, d)` | x minus rolling-average |
+| `kth_element(x, k)` | k-th element of a vector field |
+| `vec_avg(x)` / `vec_sum(x)` | aggregate over vector-valued data fields |
+| `vec_max(x)` / `vec_min(x)` | element-wise max/min over a vector field |
+| `if_else(cond, a, b)` | alias of if(cond, a, b) |
+| `nan_mask(x, y)` | NaN-mask x where y is NaN |
+
 ## Common Data Fields
 
 | Field | Description |
@@ -138,7 +161,7 @@ Always apply all five steps. Skipping neutralization or scale causes universalit
 2. Be `group_neutralize`d before scaling.
 3. No division by zero — always add small constant (`+ 0.0001`).
 4. Produce valid (non-NaN) values for ≥70% of the universe on any given day.
-5. Turnover 3–60%. Below 3% = inactive; above 60% = excessive transaction costs.
+5. Turnover 1–70%. Below 1% = inactive; above 70% = excessive transaction costs. (See `wq_standard.md` for the canonical IQC 2026 gate.)
 
 ## Quick Reference: Common Combinations
 
