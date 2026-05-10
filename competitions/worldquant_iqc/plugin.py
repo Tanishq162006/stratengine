@@ -58,7 +58,11 @@ _KNOWN_OPERATORS = {
     "stddev", "correlation", "covariance", "decay_linear", "indneutralize",
     "signedpower", "product", "delay", "sum",
     # Group / normalization aliases
-    "group_normalize",
+    "group_normalize", "group_std_dev", "group_max", "group_median",
+    "group_sum", "group_min",
+    # Math primitives surfaced by RussellDash332/WQ-Brain command generators
+    "sigmoid", "exp", "fraction", "log_diff", "log_norm",
+    "ts_entropy", "ts_count",
 }
 
 _KNOWN_FIELDS = {
@@ -238,12 +242,18 @@ def _validate(code: str) -> list[str]:
                 f"ERROR: unknown operator `{fn}`. Not in the BRAIN operator "
                 "catalog — check spelling or use a documented equivalent."
             )
+    # Identifiers that appear as keyword arguments (e.g. `LAG=1`, `RETTYPE=3`,
+    # `longscale=1`, `dense=false`) are not field references and should not
+    # trigger unknown-field warnings.
+    kwarg_names = set(re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*=(?!=)", code))
     bare_ids = [
         t for t in tokens
         if t not in func_calls
         and t not in _KNOWN_OPERATORS
         and not t.isdigit()
-        and t not in {"True", "False", "None", "and", "or", "not", "if", "else"}
+        and t not in {"True", "False", "None", "and", "or", "not", "if", "else",
+                       "true", "false", "null"}
+        and t not in kwarg_names
     ]
     for ident in sorted(set(bare_ids)):
         if _is_known_field(ident):

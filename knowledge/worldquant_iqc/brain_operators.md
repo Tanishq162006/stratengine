@@ -100,6 +100,28 @@ submission.
 | `if(cond, a, b)` | a where cond > 0, else b |
 | `trade_when(cond, a, b)` | conditional trading signal |
 
+## Math Primitives (sigmoid, log family, entropy)
+
+| Operator | Description |
+|---|---|
+| `sigmoid(x)` | 1 / (1 + exp(-x)). Soft squashing — useful when piping into magnitude composites. |
+| `exp(x)` | e^x. |
+| `fraction(x)` | x − floor(x). Useful for cycle-extraction (e.g. day-of-quarter). |
+| `log_diff(x)` | log(x_t) − log(x_{t-1}). Multiplicative-return form. |
+| `log_norm(x)` | log normalized — divides by std-dev of log values. |
+| `ts_entropy(x, d)` | Shannon entropy of x's distribution over the d-day window. |
+| `ts_count(x, d)` | Count of non-NaN entries over d-day window. |
+
+## Group Operators (extended)
+
+| Operator | Description |
+|---|---|
+| `group_std_dev(x, g)` | Std-dev within group. |
+| `group_max(x, g)` / `group_min(x, g)` | Group-wise extrema. |
+| `group_median(x, g)` | Group-wise median. |
+| `group_sum(x, g)` | Group-wise sum. |
+| `group_normalize(x, g)` | Subtract group mean, divide by group std (z-score within group). |
+
 ## Vector / Risk-Factor Operators (advanced)
 
 | Operator | Description |
