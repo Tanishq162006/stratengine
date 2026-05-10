@@ -950,5 +950,39 @@ def alpha_gpt_cmd(
         console.print(f"[dim]Full history → {out}[/]")
 
 
+@app.command("ui")
+def ui_cmd(
+    port: int = typer.Option(8501, help="Port to bind the Streamlit server."),
+    auto_import: bool = typer.Option(
+        True,
+        help="Auto-import alpha_history.md into the strategies DB on first launch.",
+    ),
+) -> None:
+    """Launch the Streamlit UI for saved strategies (BRAIN / QC / IMC tabs)."""
+    import shutil
+    import subprocess
+
+    if auto_import:
+        import strategies_db as sdb
+        existing_brain = len(sdb.list_strategies("worldquant_iqc"))
+        if existing_brain == 0:
+            n = sdb.import_alpha_history()
+            console.print(f"[dim]Auto-imported {n} BRAIN entries from alpha_history.md[/]")
+
+    if shutil.which("streamlit") is None:
+        raise typer.BadParameter(
+            "streamlit not installed. Run: pip install streamlit"
+        )
+    ui_path = Path(__file__).resolve().parent / "ui_app.py"
+    console.print(
+        f"[bold cyan]Launching UI[/] · http://localhost:{port}\n[dim]Ctrl+C to stop[/]"
+    )
+    subprocess.run(
+        ["streamlit", "run", str(ui_path), "--server.port", str(port),
+         "--server.headless", "false"],
+        check=False,
+    )
+
+
 if __name__ == "__main__":
     app()
