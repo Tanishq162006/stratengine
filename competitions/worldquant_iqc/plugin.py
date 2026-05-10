@@ -46,7 +46,19 @@ _KNOWN_OPERATORS = {
     "relu", "neg", "abs", "log", "sqrt", "min", "max", "sign",
     "pow", "pow_sign", "round", "add", "minus", "cwise_mul", "div",
     "greater", "less", "normed_rank_diff", "if", "if_else", "trade_when",
-    "nan_mask", "keep",
+    "nan_mask", "keep", "tail", "clamp",
+    # Pasteurization / NaN handling
+    "ts_count_nans", "last_diff_value", "days_from_last_change",
+    "ts_step", "ts_ir", "ts_moment", "ts_skewness", "ts_kurtosis",
+    # Vector-data reductions (case-insensitive variants surface as lowercase
+    # by the time this list is consulted — case-folded match below).
+    "vec_count", "vec_norm", "vec_stddev", "vec_skewness", "vec_kurtosis",
+    "vec_range", "vec_powersum", "vec_percentage", "vec_choose", "vec_ir",
+    # 101-formulaic / older-syntax aliases
+    "stddev", "correlation", "covariance", "decay_linear", "indneutralize",
+    "signedpower", "product", "delay", "sum",
+    # Group / normalization aliases
+    "group_normalize",
 }
 
 _KNOWN_FIELDS = {
@@ -78,9 +90,9 @@ _KNOWN_FIELD_PREFIXES = (
     "mdf_",        # Model Data Fundamentals (mdf_oey, mdf_gry, mdf_nps, mdf_pbk, ...)
     "mdl",         # China model variants (mdl175_volatility, mdl175_revenuettm, ...)
     "nws",         # News (nws12_afterhsz_sl, nws12_afterhsz_maxupamt, ...)
-    "snt_",        # Sentiment (snt_buzz_ret, ...)
-    "scl",         # Social/buzz (scl12_alltype_buzzvec, ...)
-    "pcr_",        # Put/Call ratios (pcr_vol_10, ...)
+    "snt_",        # Sentiment (snt_buzz_ret, snt_social_volume, snt_bullish, ...)
+    "scl",         # Social/buzz (scl12_alltype_buzzvec, scl15_d1_sentiment, ...)
+    "pcr_",        # Put/Call ratios (pcr_vol_10, pcr_oi_all, ...)
     "pv",          # PV grouping models (pv13_r2_min20_3000_sector, ...)
     "implied_volatility",  # implied_volatility_call_60, implied_volatility_put_720, ...
     "call_breakeven",
@@ -91,6 +103,21 @@ _KNOWN_FIELD_PREFIXES = (
     "analyst_",
     "target_",
     "revisions_",
+    # Family aggregations (fam_*) — analyst / ratings / estimates rolled up
+    "fam_",
+    # Estimates and revised actuals
+    "est_",
+    # Cashflow & balance-sheet detail
+    "cashflow_",
+    # Relative competitor metrics
+    "rel_",
+    # Beta / risk references
+    "beta_last_",
+    # Adv-N variants from 101-formulaic alphas (adv15, adv30, ..., adv180)
+    "adv",
+    # Days-until / days-from event helpers (days_until_earnings_announcement, ...)
+    "days_until_",
+    "days_from_",
 )
 
 
@@ -201,8 +228,12 @@ def _validate(code: str) -> list[str]:
     # Operator and field whitelist check (catches hallucinated names).
     tokens = re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\b", code)
     func_calls = set(re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", code))
+    # Case-insensitive operator membership: 101-formulaic uses CamelCase
+    # (Ts_Rank, SignedPower, IndNeutralize, etc.) while BRAIN canonical
+    # names are lowercase. Both surface here.
+    known_lower = {op.lower() for op in _KNOWN_OPERATORS}
     for fn in sorted(func_calls):
-        if fn not in _KNOWN_OPERATORS and fn not in {"if", "and", "or", "not"}:
+        if fn.lower() not in known_lower and fn.lower() not in {"if", "and", "or", "not"}:
             warnings.append(
                 f"ERROR: unknown operator `{fn}`. Not in the BRAIN operator "
                 "catalog — check spelling or use a documented equivalent."

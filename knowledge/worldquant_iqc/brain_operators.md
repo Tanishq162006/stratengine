@@ -109,6 +109,49 @@ submission.
 | `keep(x)` | Hold `x`'s value across days (combine with `trade_when` to lower turnover). |
 | `vec_avg(x)` / `vec_sum(x)` / `vec_max(x)` / `vec_min(x)` | REQUIRED reduction over a vector-valued field (e.g. `nws*_*`, `scl*_*`, `*_vec`). Forgetting this fails compilation. |
 
+## Pasteurization, Tail, and NaN Handling
+
+| Operator | Description |
+|---|---|
+| `pasteurize(x)` | Replace non-universe stocks with NaN (or 0 after auto-pasteurization). Manual `pasteurize` only matters for group operators on small universes (≤ TOP200). |
+| `Tail(x, lower=L, upper=U, newval=V)` | Clamp variant — values outside [L, U] become V. Useful for ratio outputs that occasionally explode. |
+| `clamp(x, low, high)` | Generic clamp; alternative to `winsorize` when bounds are known. |
+| `ts_count_nans(x, d)` | Count NaN entries in a d-day window — useful for data-quality gates. |
+
+## Skew / Kurtosis / Moments
+
+| Operator | Description |
+|---|---|
+| `Ts_Skewness(x, d)` / `ts_skew(x, d)` | Rolling skewness. |
+| `Ts_Kurtosis(x, d)` / `ts_kurt(x, d)` | Rolling kurtosis. |
+| `Ts_Moment(x, d, k=k)` | k-th central moment over d days. |
+| `Ts_Regression(y, x, d, lag=L, rettype=R)` | Rolling OLS. `rettype=2` returns alpha (intercept), `rettype=3` returns prediction, `rettype=0` returns residual. |
+| `Last_Diff_Value(x, lookback=L)` | Most recent value of `x` that differed from today's. |
+| `days_from_last_change(x)` | Days since `x` last changed. |
+| `ts_step(d)` | Linearly-increasing 1..d series — used as the x in regressions. |
+| `ts_ir(x, d)` | Information ratio = `ts_mean(x, d) / ts_std_dev(x, d)`. |
+
+## Vector Field Operators (REQUIRED for vector fields)
+
+Use these to reduce vector-valued data fields (`scl*_*`, `nws*_*`,
+`*_vec`) to scalars before any scalar operator. Forgetting this is the
+#1 reason BRAIN compilation fails on sentiment/news/social datasets.
+
+| Operator | Description |
+|---|---|
+| `vec_avg(x)` | Average over the vector. |
+| `vec_sum(x)` | Sum. |
+| `vec_max(x)` / `vec_min(x)` | Element-wise extrema. |
+| `vec_count(x)` | Number of non-NaN entries. |
+| `vec_norm(x)` | L2 norm. |
+| `vec_stddev(x)` | Std-dev across vector entries. |
+| `vec_skewness(x)` / `vec_kurtosis(x)` | Higher moments. |
+| `vec_range(x)` | max − min. |
+| `vec_powersum(x, p)` | Sum of `x_i^p`. |
+| `vec_percentage(x, q)` | q-th percentile across the vector. |
+| `vec_choose(x, k)` | k-th element. |
+| `vec_ir(x)` | Information ratio across the vector. |
+
 ## Specialty / Conditional Operators
 
 | Operator | Description |

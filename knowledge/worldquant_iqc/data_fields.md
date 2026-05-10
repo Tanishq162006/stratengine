@@ -163,6 +163,85 @@ chains.
 |---|---|
 | `pv13_r2_min20_3000_sector` | PV13 model, R²-clustered, min-20-members, TOP3000, sector-level |
 
+## Family-Aggregated Fields (`fam_*`)
+
+WorldQuant pre-built per-stock aggregations of analyst, ratings, or
+estimates data. Drop-in scalars; no `vec_*` reduction required.
+
+| Field | Description |
+|---|---|
+| `fam_roe_rank` | Family-aggregated ROE rank |
+| `fam_est_eps_rank` | Family-aggregated EPS-estimate rank |
+| `fam_earn_surp_pct` | Family earnings-surprise percent |
+
+## Finer Balance-Sheet / Income-Statement Fields
+
+| Field | Description |
+|---|---|
+| `cashflow_op` | Cash flow from operations |
+| `cash_st`     | Short-term cash equivalents |
+| `debt_st`     | Short-term debt |
+| `assets_curr` | Current assets |
+| `liabilities_curr` | Current liabilities |
+| `ebit`        | Earnings before interest and tax |
+| `capex`       | Capital expenditures |
+| `cogs`        | Cost of goods sold |
+| `ppent`       | Property/plant/equipment, net |
+| `goodwill`    | Goodwill |
+| `rnd_expenses` | R&D expenses |
+| `advertising_expenses` | Advertising expenses |
+| `total_assets` / `total_liabilities` | Aggregates |
+| `accounts_receivable` | A/R |
+| `gross_margin` / `gross_income` | Gross-margin metrics |
+| `tax_rate`    | Effective tax rate |
+| `equity_issuance` | Net equity issued |
+| `inventory_turnover` | sales / inventory |
+| `sales_growth` | YoY sales growth |
+| `sales_ps`    | Sales per share |
+| `est_eps` / `est_epsr` | Analyst-estimate EPS / revised EPS |
+| `eps_actual_revised` | Revised actual EPS |
+| `analyst_rating`, `target_price` | (already noted above) |
+
+## Sentiment Detail (`snt_*`)
+
+| Field | Description |
+|---|---|
+| `snt_buzz_ret`     | Buzz-magnitude predicted return |
+| `snt_social_volume` | Social-media volume |
+| `snt_social_value`  | Aggregated social-media value |
+| `snt_bullish` / `snt_bearish` | Directional sentiment counts |
+
+## Social Detail (`scl*_*`) — vector
+
+| Field | Description |
+|---|---|
+| `scl12_alltype_buzzvec`  | All-type buzz vector |
+| `scl12_alltype_sentvec`  | All-type sentiment vector |
+| `scl12_buzz`             | Scalar aggregate buzz |
+| `scl15_d1_sentiment`     | Daily 1-day sentiment vector |
+
+## Relative Competitor Metrics
+
+| Field | Description |
+|---|---|
+| `rel_ret_cust`  | Relative return vs customers |
+| `rel_ret_comp`  | Relative return vs competitors |
+| `rel_num_comp`  | Number of competitors |
+| `rel_num_cust`  | Number of customers |
+
+## Risk / Beta / Reference
+
+| Field | Description |
+|---|---|
+| `beta_last_360_days_spy` | 360-day beta vs SPY |
+| `fnd6_newqeventv110_optrfrq` | Risk-free rate (Compustat / new-event) |
+
+## Earnings-Event Helpers
+
+| Field | Description |
+|---|---|
+| `days_until_earnings_announcement` | Calendar days to next announcement |
+
 ## Derived helpers (constructable)
 
 | Name | Formula |
